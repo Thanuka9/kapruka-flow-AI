@@ -3,6 +3,7 @@
 All runtime tunables live here so deployments can be configured purely through
 environment variables (12-factor style) without touching code.
 """
+
 from __future__ import annotations
 
 import os
@@ -51,8 +52,12 @@ class Settings:
         self.mcp_retry_backoff: float = _as_float(os.getenv("MCP_RETRY_BACKOFF"), 0.75)
 
         # Behaviour flags
-        self.allow_simulated_checkout: bool = _as_bool(os.getenv("ALLOW_SIMULATED_CHECKOUT"), False)
-        self.allow_fallback_catalog: bool = _as_bool(os.getenv("ALLOW_FALLBACK_CATALOG"), False)
+        self.allow_simulated_checkout: bool = _as_bool(
+            os.getenv("ALLOW_SIMULATED_CHECKOUT"), False
+        )
+        self.allow_fallback_catalog: bool = _as_bool(
+            os.getenv("ALLOW_FALLBACK_CATALOG"), False
+        )
 
         # Persistence
         default_db = os.path.join(os.path.dirname(__file__), "..", "flow.db")

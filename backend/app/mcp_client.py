@@ -3,6 +3,7 @@
 Adds bounded timeouts and retry-with-backoff around the streamable HTTP
 transport so transient network blips don't fail an entire shopping pipeline.
 """
+
 import asyncio
 import json
 from contextlib import asynccontextmanager
@@ -22,13 +23,19 @@ MCP_URL = settings.mcp_url
 @asynccontextmanager
 async def mcp_session():
     """Reuse one MCP HTTP session for an entire agent pipeline run."""
-    async with streamable_http_client(url=MCP_URL) as (read_stream, write_stream, _get_session_id):
+    async with streamable_http_client(url=MCP_URL) as (
+        read_stream,
+        write_stream,
+        _get_session_id,
+    ):
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
             yield session
 
 
-async def call_tool(session: ClientSession, tool_name: str, arguments: Dict[str, Any]) -> Optional[str]:
+async def call_tool(
+    session: ClientSession, tool_name: str, arguments: Dict[str, Any]
+) -> Optional[str]:
     """Call an MCP tool on an existing session with a bounded timeout + retries."""
     attempts = max(1, settings.mcp_max_retries + 1)
     last_error: Optional[Exception] = None
@@ -44,10 +51,18 @@ async def call_tool(session: ClientSession, tool_name: str, arguments: Dict[str,
             return None
         except asyncio.TimeoutError as exc:
             last_error = exc
-            logger.warning("MCP tool %s timed out (attempt %d/%d)", tool_name, attempt, attempts)
+            logger.warning(
+                "MCP tool %s timed out (attempt %d/%d)", tool_name, attempt, attempts
+            )
         except Exception as exc:
             last_error = exc
-            logger.warning("MCP tool %s failed (attempt %d/%d): %s", tool_name, attempt, attempts, exc)
+            logger.warning(
+                "MCP tool %s failed (attempt %d/%d): %s",
+                tool_name,
+                attempt,
+                attempts,
+                exc,
+            )
 
         if attempt < attempts:
             await asyncio.sleep(settings.mcp_retry_backoff * attempt)
@@ -56,7 +71,9 @@ async def call_tool(session: ClientSession, tool_name: str, arguments: Dict[str,
     return None
 
 
-async def call_mcp_tool_safe(tool_name: str, arguments: Dict[str, Any]) -> Optional[str]:
+async def call_mcp_tool_safe(
+    tool_name: str, arguments: Dict[str, Any]
+) -> Optional[str]:
     """Standalone MCP call for one-off API routes (categories, cities, checkout).
 
     Opens a fresh session and retries the whole exchange (including connection
@@ -72,7 +89,11 @@ async def call_mcp_tool_safe(tool_name: str, arguments: Dict[str, Any]) -> Optio
         except Exception as exc:
             last_error = exc
             logger.warning(
-                "MCP session for %s failed (attempt %d/%d): %s", tool_name, attempt, attempts, exc
+                "MCP session for %s failed (attempt %d/%d): %s",
+                tool_name,
+                attempt,
+                attempts,
+                exc,
             )
             if attempt < attempts:
                 await asyncio.sleep(settings.mcp_retry_backoff * attempt)
@@ -97,9 +118,11 @@ def emit_event(
     tool: Optional[str] = None,
     detail: Optional[Any] = None,
 ) -> None:
-    events.append({
-        "step": step,
-        "message": message,
-        "tool": tool,
-        "detail": detail,
-    })
+    events.append(
+        {
+            "step": step,
+            "message": message,
+            "tool": tool,
+            "detail": detail,
+        }
+    )

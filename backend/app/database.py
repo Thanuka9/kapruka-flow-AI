@@ -49,7 +49,10 @@ def verify_password(password: str, stored: str) -> bool:
         try:
             _, iterations, salt, digest = stored.split("$", 3)
             computed = hashlib.pbkdf2_hmac(
-                "sha256", password.encode("utf-8"), salt.encode("utf-8"), int(iterations)
+                "sha256",
+                password.encode("utf-8"),
+                salt.encode("utf-8"),
+                int(iterations),
             ).hex()
             return hmac.compare_digest(computed, digest)
         except Exception as exc:
@@ -58,10 +61,11 @@ def verify_password(password: str, stored: str) -> bool:
     # Legacy plaintext fallback.
     return hmac.compare_digest(password, stored)
 
+
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     # Create sessions table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS sessions (
@@ -70,7 +74,7 @@ def init_db():
         updated_at TEXT NOT NULL
     )
     """)
-    
+
     # Create messages table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS messages (
@@ -82,7 +86,7 @@ def init_db():
         FOREIGN KEY (session_id) REFERENCES sessions (session_id)
     )
     """)
-    
+
     # Create cart_versions table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS cart_versions (
@@ -96,7 +100,7 @@ def init_db():
         FOREIGN KEY (session_id) REFERENCES sessions (session_id)
     )
     """)
-    
+
     # Create user_preferences table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS user_preferences (
@@ -108,7 +112,7 @@ def init_db():
         FOREIGN KEY (session_id) REFERENCES sessions (session_id)
     )
     """)
-    
+
     # Create delivery_state table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS delivery_state (
@@ -122,7 +126,7 @@ def init_db():
         FOREIGN KEY (session_id) REFERENCES sessions (session_id)
     )
     """)
-    
+
     # Create analytics table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS analytics (
@@ -157,7 +161,7 @@ def init_db():
         created_at TEXT NOT NULL
     )
     """)
-    
+
     # Safely alter table to add evolution column if not exists
     try:
         cursor.execute("ALTER TABLE user_preferences ADD COLUMN evolution TEXT")
@@ -171,14 +175,21 @@ def init_db():
         pass  # Column already exists
 
     # Indexes for the hot read paths.
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_messages_session ON messages (session_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cart_versions_session ON cart_versions (session_id)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_messages_session ON messages (session_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_cart_versions_session ON cart_versions (session_id)"
+    )
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_email ON orders (email)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_analytics_session ON analytics (session_id)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_analytics_session ON analytics (session_id)"
+    )
 
     conn.commit()
     conn.close()
     logger.info("Database initialized at %s", DB_PATH)
+
 
 def create_session(session_id: str) -> bool:
     conn = get_db_connection()
@@ -187,7 +198,7 @@ def create_session(session_id: str) -> bool:
     try:
         cursor.execute(
             "INSERT OR IGNORE INTO sessions (session_id, created_at, updated_at) VALUES (?, ?, ?)",
-            (session_id, now, now)
+            (session_id, now, now),
         )
         conn.commit()
         return True
@@ -197,6 +208,7 @@ def create_session(session_id: str) -> bool:
     finally:
         conn.close()
 
+
 def save_message(session_id: str, role: str, content: str):
     create_session(session_id)
     conn = get_db_connection()
@@ -205,7 +217,7 @@ def save_message(session_id: str, role: str, content: str):
     try:
         cursor.execute(
             "INSERT INTO messages (session_id, role, content, created_at) VALUES (?, ?, ?, ?)",
-            (session_id, role, content, now)
+            (session_id, role, content, now),
         )
         conn.commit()
     except Exception as e:
@@ -213,13 +225,14 @@ def save_message(session_id: str, role: str, content: str):
     finally:
         conn.close()
 
+
 def get_messages(session_id: str) -> List[Dict]:
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
             "SELECT role, content, created_at FROM messages WHERE session_id = ? ORDER BY id ASC",
-            (session_id,)
+            (session_id,),
         )
         rows = cursor.fetchall()
         return [dict(r) for r in rows]
@@ -228,6 +241,7 @@ def get_messages(session_id: str) -> List[Dict]:
         return []
     finally:
         conn.close()
+
 
 def safe_extract_price(p: dict) -> float:
     """Type-safe helper to parse product price into a float amount."""
@@ -239,7 +253,10 @@ def safe_extract_price(p: dict) -> float:
     except (TypeError, ValueError):
         return 0.0
 
-def save_cart_versions(session_id: str, versions: Dict[str, List[Dict]], story: List[str]):
+
+def save_cart_versions(
+    session_id: str, versions: Dict[str, List[Dict]], story: List[str]
+):
     create_session(session_id)
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -247,19 +264,27 @@ def save_cart_versions(session_id: str, versions: Dict[str, List[Dict]], story: 
     try:
         # First clear old cart versions for this session to keep it clean
         cursor.execute("DELETE FROM cart_versions WHERE session_id = ?", (session_id,))
-        
+
         # Save each version
         for version_name, products in versions.items():
             total_price = sum(safe_extract_price(p) for p in products)
             cursor.execute(
                 "INSERT INTO cart_versions (session_id, version_name, products_json, story_json, total_price, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (session_id, version_name, json.dumps(products), json.dumps(story), total_price, now)
+                (
+                    session_id,
+                    version_name,
+                    json.dumps(products),
+                    json.dumps(story),
+                    total_price,
+                    now,
+                ),
             )
         conn.commit()
     except Exception as e:
         logger.error("save_cart_versions failed: %s", e)
     finally:
         conn.close()
+
 
 def get_cart_versions(session_id: str) -> Dict[str, List[Dict]]:
     conn = get_db_connection()
@@ -268,7 +293,7 @@ def get_cart_versions(session_id: str) -> Dict[str, List[Dict]]:
     try:
         cursor.execute(
             "SELECT version_name, products_json FROM cart_versions WHERE session_id = ?",
-            (session_id,)
+            (session_id,),
         )
         rows = cursor.fetchall()
         for r in rows:
@@ -280,13 +305,14 @@ def get_cart_versions(session_id: str) -> Dict[str, List[Dict]]:
     finally:
         conn.close()
 
+
 def get_story(session_id: str) -> List[str]:
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
             "SELECT story_json FROM cart_versions WHERE session_id = ? LIMIT 1",
-            (session_id,)
+            (session_id,),
         )
         row = cursor.fetchone()
         if row and row["story_json"]:
@@ -298,7 +324,15 @@ def get_story(session_id: str) -> List[str]:
     finally:
         conn.close()
 
-def save_user_preferences(session_id: str, budget: float, language: str, city: str, delivery_speed: str, evolution: str = None):
+
+def save_user_preferences(
+    session_id: str,
+    budget: float,
+    language: str,
+    city: str,
+    delivery_speed: str,
+    evolution: str = None,
+):
     create_session(session_id)
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -310,7 +344,7 @@ def save_user_preferences(session_id: str, budget: float, language: str, city: s
                    ON CONFLICT(session_id) DO UPDATE SET
                    budget=excluded.budget, language=excluded.language, city=excluded.city, 
                    delivery_speed=excluded.delivery_speed, evolution=excluded.evolution""",
-                (session_id, budget, language, city, delivery_speed, evolution)
+                (session_id, budget, language, city, delivery_speed, evolution),
             )
         else:
             cursor.execute(
@@ -318,7 +352,7 @@ def save_user_preferences(session_id: str, budget: float, language: str, city: s
                    VALUES (?, ?, ?, ?, ?)
                    ON CONFLICT(session_id) DO UPDATE SET
                    budget=excluded.budget, language=excluded.language, city=excluded.city, delivery_speed=excluded.delivery_speed""",
-                (session_id, budget, language, city, delivery_speed)
+                (session_id, budget, language, city, delivery_speed),
             )
         conn.commit()
     except Exception as e:
@@ -326,13 +360,14 @@ def save_user_preferences(session_id: str, budget: float, language: str, city: s
     finally:
         conn.close()
 
+
 def get_user_preferences(session_id: str) -> Optional[Dict]:
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
             "SELECT budget, language, city, delivery_speed, evolution FROM user_preferences WHERE session_id = ?",
-            (session_id,)
+            (session_id,),
         )
         row = cursor.fetchone()
         return dict(row) if row else None
@@ -342,7 +377,16 @@ def get_user_preferences(session_id: str) -> Optional[Dict]:
     finally:
         conn.close()
 
-def save_delivery_state(session_id: str, city: str, address: str, recipient_name: str, recipient_phone: str, sender_name: str, gift_message: str):
+
+def save_delivery_state(
+    session_id: str,
+    city: str,
+    address: str,
+    recipient_name: str,
+    recipient_phone: str,
+    sender_name: str,
+    gift_message: str,
+):
     create_session(session_id)
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -353,7 +397,15 @@ def save_delivery_state(session_id: str, city: str, address: str, recipient_name
                ON CONFLICT(session_id) DO UPDATE SET
                city=excluded.city, address=excluded.address, recipient_name=excluded.recipient_name,
                recipient_phone=excluded.recipient_phone, sender_name=excluded.sender_name, gift_message=excluded.gift_message""",
-            (session_id, city, address, recipient_name, recipient_phone, sender_name, gift_message)
+            (
+                session_id,
+                city,
+                address,
+                recipient_name,
+                recipient_phone,
+                sender_name,
+                gift_message,
+            ),
         )
         conn.commit()
     except Exception as e:
@@ -361,13 +413,14 @@ def save_delivery_state(session_id: str, city: str, address: str, recipient_name
     finally:
         conn.close()
 
+
 def get_delivery_state(session_id: str) -> Optional[Dict]:
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
             "SELECT city, address, recipient_name, recipient_phone, sender_name, gift_message FROM delivery_state WHERE session_id = ?",
-            (session_id,)
+            (session_id,),
         )
         row = cursor.fetchone()
         return dict(row) if row else None
@@ -377,6 +430,7 @@ def get_delivery_state(session_id: str) -> Optional[Dict]:
     finally:
         conn.close()
 
+
 def log_analytics(session_id: Optional[str], event_type: str, event_data: Dict):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -384,13 +438,14 @@ def log_analytics(session_id: Optional[str], event_type: str, event_data: Dict):
     try:
         cursor.execute(
             "INSERT INTO analytics (session_id, event_type, event_data, timestamp) VALUES (?, ?, ?, ?)",
-            (session_id, event_type, json.dumps(event_data), now)
+            (session_id, event_type, json.dumps(event_data), now),
         )
         conn.commit()
     except Exception as e:
         logger.error("log_analytics failed: %s", e)
     finally:
         conn.close()
+
 
 # User Credentials Functions
 def create_user(email: str, name: str, password: str):
@@ -401,7 +456,7 @@ def create_user(email: str, name: str, password: str):
     try:
         cursor.execute(
             "INSERT OR REPLACE INTO users (email, name, password, created_at) VALUES (?, ?, ?, ?)",
-            (email, name, hash_password(password), now)
+            (email, name, hash_password(password), now),
         )
         conn.commit()
     except Exception as e:
@@ -409,11 +464,14 @@ def create_user(email: str, name: str, password: str):
     finally:
         conn.close()
 
+
 def get_user(email: str) -> Optional[Dict]:
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT email, name, password FROM users WHERE email = ?", (email,))
+        cursor.execute(
+            "SELECT email, name, password FROM users WHERE email = ?", (email,)
+        )
         row = cursor.fetchone()
         return dict(row) if row else None
     except Exception as e:
@@ -421,6 +479,7 @@ def get_user(email: str) -> Optional[Dict]:
         return None
     finally:
         conn.close()
+
 
 # User Orders History Functions
 def save_order(
@@ -436,12 +495,24 @@ def save_order(
     conn = get_db_connection()
     cursor = conn.cursor()
     now = datetime.utcnow().isoformat()
-    categories_csv = ",".join(sorted({c.strip().lower() for c in (categories or []) if c and c.strip()}))
+    categories_csv = ",".join(
+        sorted({c.strip().lower() for c in (categories or []) if c and c.strip()})
+    )
     try:
         cursor.execute(
             """INSERT INTO orders (order_id, email, session_id, version, total_price, delivery_city, recipient_name, created_at, categories)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (order_id, email, session_id, version, total_price, delivery_city, recipient_name, now, categories_csv)
+            (
+                order_id,
+                email,
+                session_id,
+                version,
+                total_price,
+                delivery_city,
+                recipient_name,
+                now,
+                categories_csv,
+            ),
         )
         conn.commit()
     except Exception as e:
@@ -449,13 +520,14 @@ def save_order(
     finally:
         conn.close()
 
+
 def get_user_orders(email: str) -> List[Dict]:
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
             "SELECT order_id, session_id, version, total_price, delivery_city, recipient_name, created_at, categories FROM orders WHERE email = ? ORDER BY created_at DESC",
-            (email,)
+            (email,),
         )
         rows = cursor.fetchall()
         return [dict(r) for r in rows]

@@ -32,11 +32,14 @@ from .database import (
     get_user,
     verify_password,
     save_order,
-    get_user_orders
+    get_user_orders,
 )
 from .agents import execute_agent_pipeline, run_shopping_agent
 from .mcp_client import call_mcp_tool_safe, call_tool, mcp_session, parse_json_response
-from .mcp_intelligence import build_user_profile_from_history, enrich_user_profile_with_saved
+from .mcp_intelligence import (
+    build_user_profile_from_history,
+    enrich_user_profile_with_saved,
+)
 
 ALLOW_SIMULATED_CHECKOUT = settings.allow_simulated_checkout
 
@@ -78,7 +81,7 @@ async def log_requests(request, call_next):
 # Protects the expensive MCP-backed routes from a single client hammering
 # them (the upstream MCP rate-limits aggressively; better to fail fast here).
 _RATE_LIMITS = {
-    "/api/intent": (10, 60.0),    # 10 builds/min per client
+    "/api/intent": (10, 60.0),  # 10 builds/min per client
     "/api/checkout": (6, 60.0),
     "/api/login": (12, 60.0),
     "/api/search": (30, 60.0),
@@ -92,9 +95,8 @@ async def rate_limit(request: Request, call_next):
     if limit_cfg:
         max_calls, window = limit_cfg
         forwarded = request.headers.get("x-forwarded-for", "")
-        client = (
-            forwarded.split(",")[0].strip()
-            or (request.client.host if request.client else "unknown")
+        client = forwarded.split(",")[0].strip() or (
+            request.client.host if request.client else "unknown"
         )
         key = f"{client}:{request.url.path}"
         now = time.monotonic()
@@ -105,7 +107,9 @@ async def rate_limit(request: Request, call_next):
             api_logger.warning("Rate limit hit: %s %s", client, request.url.path)
             return JSONResponse(
                 status_code=429,
-                content={"detail": "Too many requests — please slow down and try again shortly."},
+                content={
+                    "detail": "Too many requests — please slow down and try again shortly."
+                },
             )
         bucket.append(now)
     return await call_next(request)
@@ -122,6 +126,7 @@ async def startup_event():
         settings.environment,
         settings.mcp_url,
     )
+
 
 # Request Models
 class IntentRequest(BaseModel):
@@ -142,6 +147,7 @@ class IntentRequest(BaseModel):
             raise ValueError("text must not be blank")
         return v
 
+
 class CheckoutRequest(BaseModel):
     session_id: str = Field(max_length=64)
     cart_version: str = Field(pattern=r"^(initial|cheaper|premium|fast)$")
@@ -154,7 +160,9 @@ class CheckoutRequest(BaseModel):
     sender_name: str = Field(min_length=1, max_length=120)
     gift_message: Optional[str] = Field(default=None, max_length=500)
     currency: Optional[str] = Field(default="LKR", max_length=8)
-    email: Optional[str] = Field(default=None, max_length=254)  # Associate logged-in email
+    email: Optional[str] = Field(
+        default=None, max_length=254
+    )  # Associate logged-in email
 
     @field_validator("delivery_date")
     @classmethod
@@ -173,15 +181,18 @@ class CheckoutRequest(BaseModel):
             raise ValueError("recipient_phone must be a valid phone number")
         return v
 
+
 class AnalyticsRequest(BaseModel):
     session_id: Optional[str]
     event_type: str
     event_data: Dict[str, Any]
 
+
 class UpdateCartRequest(BaseModel):
     session_id: str
     cart_versions: Dict[str, List[Dict[str, Any]]]
     evolution: Optional[List[Any]] = None
+
 
 class LoginRequest(BaseModel):
     email: str = Field(min_length=3, max_length=254)
@@ -196,27 +207,34 @@ class LoginRequest(BaseModel):
             raise ValueError("email must be a valid address")
         return v
 
+
 @app.post("/api/intent")
 async def handle_intent(req: IntentRequest):
     # Generate new session ID if not provided
     session_id = req.session_id or str(uuid.uuid4())
-    
+
     # Save user message to database
     save_message(session_id, "user", req.text)
-    
+
     try:
         user_profile = None
         if req.user_email:
             orders = get_user_orders(req.user_email)
             user_profile = build_user_profile_from_history(orders)
         if req.saved_products:
-            user_profile = enrich_user_profile_with_saved(user_profile, req.saved_products)
+            user_profile = enrich_user_profile_with_saved(
+                user_profile, req.saved_products
+            )
         if user_profile:
-            log_analytics(session_id, "user_profile_applied", {
-                "email": req.user_email,
-                "order_count": user_profile.get("order_count", 0),
-                "saved_count": user_profile.get("saved_count", 0),
-            })
+            log_analytics(
+                session_id,
+                "user_profile_applied",
+                {
+                    "email": req.user_email,
+                    "order_count": user_profile.get("order_count", 0),
+                    "saved_count": user_profile.get("saved_count", 0),
+                },
+            )
 
         result = await execute_agent_pipeline(
             req.text,
@@ -238,11 +256,11 @@ async def handle_intent(req: IntentRequest):
                 status_code=503,
                 detail="Could not build a shopping plan from Kapruka catalog.",
             )
-        
+
         # Save results to database
         story = result.get("story", [])
         save_cart_versions(session_id, versions, story)
-        
+
         # Save user preferences with evolution
         metadata = result.get("metadata", {})
         intent_parsed = metadata.get("intent_parsed", {})
@@ -252,9 +270,9 @@ async def handle_intent(req: IntentRequest):
             language=intent_parsed.get("language", "en"),
             city=metadata.get("delivery_city", "Colombo 01"),
             delivery_speed=intent_parsed.get("delivery_speed", "standard"),
-            evolution=json.dumps(req.evolution) if req.evolution else None
+            evolution=json.dumps(req.evolution) if req.evolution else None,
         )
-        
+
         # Pre-fill delivery state with city
         save_delivery_state(
             session_id,
@@ -263,12 +281,12 @@ async def handle_intent(req: IntentRequest):
             recipient_name="",
             recipient_phone="",
             sender_name="",
-            gift_message=intent_parsed.get("gift_message", "")
+            gift_message=intent_parsed.get("gift_message", ""),
         )
-        
+
         # Save agent response (story) to DB message log
         save_message(session_id, "assistant", " | ".join(story))
-        
+
         # Return complete payload
         return {
             "session_id": session_id,
@@ -277,28 +295,33 @@ async def handle_intent(req: IntentRequest):
             "metadata": metadata,
             "pipeline_events": result.get("pipeline_events", []),
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         api_logger.exception("Intent pipeline failed for session %s", session_id)
         log_analytics(session_id, "pipeline_error", {"detail": str(e)})
-        raise HTTPException(status_code=500, detail="Failed to build a shopping plan. Please try again.")
+        raise HTTPException(
+            status_code=500, detail="Failed to build a shopping plan. Please try again."
+        )
+
 
 @app.post("/api/checkout")
 async def handle_checkout(req: CheckoutRequest):
     # 1. Fetch products for the specified version from DB
     versions = get_cart_versions(req.session_id)
     if not versions or req.cart_version not in versions:
-        raise HTTPException(status_code=404, detail="Cart version not found for this session")
-        
+        raise HTTPException(
+            status_code=404, detail="Cart version not found for this session"
+        )
+
     products = versions[req.cart_version]
     if not products:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
     # Categories actually purchased — persisted so the AI learns real preferences.
     order_categories = [p.get("category") for p in products if p.get("category")]
-        
+
     # Save the updated delivery state to DB
     save_delivery_state(
         req.session_id,
@@ -307,52 +330,46 @@ async def handle_checkout(req: CheckoutRequest):
         recipient_name=req.recipient_name,
         recipient_phone=req.recipient_phone,
         sender_name=req.sender_name,
-        gift_message=req.gift_message
+        gift_message=req.gift_message,
     )
-    
+
     # 2. Build cart items for MCP
     mcp_cart = []
     for p in products:
-        mcp_cart.append({
-            "product_id": p["id"],
-            "quantity": p.get("quantity", 1)
-        })
-        
+        mcp_cart.append({"product_id": p["id"], "quantity": p.get("quantity", 1)})
+
     # 3. Call remote MCP
     order_params = {
         "params": {
             "cart": mcp_cart,
-            "recipient": {
-                "name": req.recipient_name,
-                "phone": req.recipient_phone
-            },
+            "recipient": {"name": req.recipient_name, "phone": req.recipient_phone},
             "delivery": {
                 "address": req.delivery_address,
                 "city": req.delivery_city,
                 "date": req.delivery_date,
                 "location_type": "house",
-                "instructions": req.delivery_instructions
+                "instructions": req.delivery_instructions,
             },
-            "sender": {
-                "name": req.sender_name,
-                "anonymous": False
-            },
+            "sender": {"name": req.sender_name, "anonymous": False},
             "gift_message": req.gift_message,
             "currency": req.currency or "LKR",
-            "response_format": "json"
+            "response_format": "json",
         }
     }
-    
-    api_logger.info("Creating Kapruka guest order via MCP for session %s", req.session_id)
+
+    api_logger.info(
+        "Creating Kapruka guest order via MCP for session %s", req.session_id
+    )
 
     mcp_res = await call_mcp_tool_safe("kapruka_create_order", order_params)
-    
+
     # Track order check event in database analytics
-    log_analytics(req.session_id, "checkout_attempt", {
-        "cart_version": req.cart_version,
-        "total_items": len(mcp_cart)
-    })
-    
+    log_analytics(
+        req.session_id,
+        "checkout_attempt",
+        {"cart_version": req.cart_version, "total_items": len(mcp_cart)},
+    )
+
     # Safe price sum extraction helper
     def safe_price_sum(prods):
         total = 0.0
@@ -379,10 +396,7 @@ async def handle_checkout(req: CheckoutRequest):
                 order_num = "FLOW-REF-" + str(uuid.uuid4())[:8]
 
             summary = order_data.get("summary") or {}
-            total_val = (
-                summary.get("grand_total")
-                or order_data.get("total")
-            )
+            total_val = summary.get("grand_total") or order_data.get("total")
             if not total_val:
                 total_val = safe_price_sum(products) + 300
             else:
@@ -400,10 +414,11 @@ async def handle_checkout(req: CheckoutRequest):
                 pay_url = f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={order_num}"
 
             # Log success
-            log_analytics(req.session_id, "checkout_success", {
-                "order_number": order_num,
-                "total": total_val
-            })
+            log_analytics(
+                req.session_id,
+                "checkout_success",
+                {"order_number": order_num, "total": total_val},
+            )
             # Save order to DB history
             save_order(
                 order_id=order_num,
@@ -413,7 +428,7 @@ async def handle_checkout(req: CheckoutRequest):
                 total_price=total_val,
                 delivery_city=req.delivery_city,
                 recipient_name=req.recipient_name,
-                categories=order_categories
+                categories=order_categories,
             )
             return {
                 "success": True,
@@ -421,11 +436,19 @@ async def handle_checkout(req: CheckoutRequest):
                 "payment_url": pay_url,
                 "total": total_val,
                 "currency": order_data.get("currency", "LKR"),
-                "formatted_message": order_data.get("message", "Order created successfully!")
+                "formatted_message": order_data.get(
+                    "message", "Order created successfully!"
+                ),
             }
         except Exception as e:
-            api_logger.warning("Could not parse MCP order result, attempting link fallback: %s", e)
-            pay_link_match = re.search(r"href=['\"](.*?)['\"]|\]\((https://.*?pay.*?)\)", mcp_res, re.IGNORECASE)
+            api_logger.warning(
+                "Could not parse MCP order result, attempting link fallback: %s", e
+            )
+            pay_link_match = re.search(
+                r"href=['\"](.*?)['\"]|\]\((https://.*?pay.*?)\)",
+                mcp_res,
+                re.IGNORECASE,
+            )
             if pay_link_match:
                 url = pay_link_match.group(1) or pay_link_match.group(2)
                 sim_order_id = "TEMP-" + str(uuid.uuid4())[:8]
@@ -438,7 +461,7 @@ async def handle_checkout(req: CheckoutRequest):
                     total_price=final_total,
                     delivery_city=req.delivery_city,
                     recipient_name=req.recipient_name,
-                    categories=order_categories
+                    categories=order_categories,
                 )
                 return {
                     "success": True,
@@ -446,9 +469,9 @@ async def handle_checkout(req: CheckoutRequest):
                     "payment_url": url,
                     "total": final_total,
                     "currency": req.currency or "LKR",
-                    "formatted_message": mcp_res
+                    "formatted_message": mcp_res,
                 }
-                
+
     api_logger.error("MCP order creation failed for session %s", req.session_id)
     log_analytics(req.session_id, "checkout_failed", {"cart_version": req.cart_version})
 
@@ -459,7 +482,9 @@ async def handle_checkout(req: CheckoutRequest):
         )
 
     sim_order_id = "FLOW-SIM-" + str(uuid.uuid4())[:8]
-    sim_url = f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={sim_order_id}"
+    sim_url = (
+        f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={sim_order_id}"
+    )
     log_analytics(req.session_id, "checkout_fallback", {"order_id": sim_order_id})
     final_total = safe_price_sum(products) + 300
     save_order(
@@ -481,6 +506,7 @@ async def handle_checkout(req: CheckoutRequest):
         "formatted_message": "Simulated checkout — enable ALLOW_SIMULATED_CHECKOUT for development only.",
         "simulated": True,
     }
+
 
 @app.get("/healthz")
 async def liveness():
@@ -569,6 +595,7 @@ async def search_catalog(q: str):
     _search_cache[key] = {"results": products, "ts": now}
     return {"results": products}
 
+
 _FALLBACK_CATEGORIES = {
     "categories": [
         {"name": "Flowers", "url": "https://www.kapruka.com/shop/flowers"},
@@ -592,7 +619,7 @@ async def get_categories():
 
     categories_res = await call_mcp_tool_safe(
         "kapruka_list_categories",
-        arguments={"params": {"depth": 1, "response_format": "json"}}
+        arguments={"params": {"depth": 1, "response_format": "json"}},
     )
     if categories_res:
         try:
@@ -607,6 +634,7 @@ async def get_categories():
     if _categories_cache["data"]:
         return _categories_cache["data"]
     return _FALLBACK_CATEGORIES
+
 
 # City prefixes are tiny and stable — cache them for the process lifetime.
 _cities_cache: Dict[str, List[str]] = {}
@@ -641,6 +669,7 @@ async def autocomplete_cities(q: str):
         _cities_cache[key] = names
     return {"cities": names}
 
+
 @app.get("/api/session")
 async def handle_session(session_id: str):
     versions = get_cart_versions(session_id)
@@ -648,10 +677,12 @@ async def handle_session(session_id: str):
     story_list = get_story(session_id)
     prefs = get_user_preferences(session_id) or {}
     del_state = get_delivery_state(session_id)
-    
+
     if not versions:
-        raise HTTPException(status_code=404, detail="Session not found or has no active carts")
-        
+        raise HTTPException(
+            status_code=404, detail="Session not found or has no active carts"
+        )
+
     # Extract original user prompt from messages
     user_prompt = ""
     for msg in story:
@@ -673,23 +704,23 @@ async def handle_session(session_id: str):
         "story": story_list or ["Restored active session."],
         "evolution": evolution_list,
         "metadata": {
-            "intent_parsed": {
-                **prefs,
-                "query": user_prompt
-            },
-            "delivery_city": del_state.get("city") if del_state else (prefs.get("city") if prefs else "Colombo 01"),
+            "intent_parsed": {**prefs, "query": user_prompt},
+            "delivery_city": del_state.get("city")
+            if del_state
+            else (prefs.get("city") if prefs else "Colombo 01"),
             "delivery_fee": 300.0,
-            "budget_limit": prefs.get("budget", 25000.0) if prefs else 25000.0
+            "budget_limit": prefs.get("budget", 25000.0) if prefs else 25000.0,
         },
-        "delivery_state": del_state
+        "delivery_state": del_state,
     }
+
 
 @app.post("/api/cart")
 async def update_cart(req: UpdateCartRequest):
     # Retrieve existing story to avoid overwriting it with empty
     story = get_story(req.session_id)
     save_cart_versions(req.session_id, req.cart_versions, story)
-    
+
     # Save updated evolution to user preferences
     if req.evolution is not None:
         prefs = get_user_preferences(req.session_id) or {}
@@ -699,9 +730,10 @@ async def update_cart(req: UpdateCartRequest):
             language=prefs.get("language", "en"),
             city=prefs.get("city", "Colombo 01"),
             delivery_speed=prefs.get("delivery_speed", "standard"),
-            evolution=json.dumps(req.evolution)
+            evolution=json.dumps(req.evolution),
         )
     return {"status": "ok"}
+
 
 @app.post("/api/login")
 async def login_user(req: LoginRequest):
@@ -726,10 +758,12 @@ async def login_user(req: LoginRequest):
         },
     }
 
+
 @app.get("/api/profile/orders")
 async def get_profile_orders(email: str):
     orders = get_user_orders(email)
     return {"orders": orders}
+
 
 @app.post("/api/analytics")
 async def handle_analytics(req: AnalyticsRequest):

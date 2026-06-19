@@ -4,6 +4,7 @@ Windows consoles frequently use legacy code pages (cp1252) that crash when
 emitting Sinhala / emoji characters. We force UTF-8 on the std streams and fall
 back to ASCII-safe replacement so logging can never take down a request.
 """
+
 from __future__ import annotations
 
 import logging

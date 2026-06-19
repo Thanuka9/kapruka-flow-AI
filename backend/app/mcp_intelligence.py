@@ -12,6 +12,7 @@ Kapruka MCP products. The core of the "AI" here is:
   3. A budget-filling, diversity-aware selector that builds Ideal / Cheaper /
      Premium / Fast plans which genuinely use the available budget.
 """
+
 from __future__ import annotations
 
 import math
@@ -53,56 +54,183 @@ CITY_ALIASES = {
 }
 
 GIFT_WORDS = [
-    "gift", "hamper", "present", "surprise", "bouquet",
-    "thaaththa", "thaththa", "amma", "ammata", "nangi", "malli", "aiya", "akka",
+    "gift",
+    "hamper",
+    "present",
+    "surprise",
+    "bouquet",
+    "thaaththa",
+    "thaththa",
+    "amma",
+    "ammata",
+    "nangi",
+    "malli",
+    "aiya",
+    "akka",
 ]
 
 # Recipient → (gift implied, friendly tag) so the story + gift note can adapt.
 RECIPIENT_WORDS = {
-    "amma": "mother", "mother": "mother", "mom": "mother", "mum": "mother", "ammata": "mother",
-    "thaththa": "father", "thaaththa": "father", "father": "father", "dad": "father", "appa": "father",
-    "wife": "wife", "husband": "husband", "girlfriend": "partner", "boyfriend": "partner",
-    "partner": "partner", "valentine": "partner",
-    "sister": "sister", "nangi": "sister", "akka": "sister", "brother": "brother",
-    "malli": "brother", "aiya": "brother",
-    "boss": "colleague", "team": "team", "office": "team", "colleague": "colleague",
-    "friend": "friend", "yaaluwa": "friend", "machan": "friend",
-    "daughter": "child", "son": "child", "baby": "baby", "kid": "child", "child": "child",
+    "amma": "mother",
+    "mother": "mother",
+    "mom": "mother",
+    "mum": "mother",
+    "ammata": "mother",
+    "thaththa": "father",
+    "thaaththa": "father",
+    "father": "father",
+    "dad": "father",
+    "appa": "father",
+    "wife": "wife",
+    "husband": "husband",
+    "girlfriend": "partner",
+    "boyfriend": "partner",
+    "partner": "partner",
+    "valentine": "partner",
+    "sister": "sister",
+    "nangi": "sister",
+    "akka": "sister",
+    "brother": "brother",
+    "malli": "brother",
+    "aiya": "brother",
+    "boss": "colleague",
+    "team": "team",
+    "office": "team",
+    "colleague": "colleague",
+    "friend": "friend",
+    "yaaluwa": "friend",
+    "machan": "friend",
+    "daughter": "child",
+    "son": "child",
+    "baby": "baby",
+    "kid": "child",
+    "child": "child",
 }
 
 OCCASION_WORDS = {
-    "birthday": "birthday", "bday": "birthday", "upan dinaya": "birthday",
+    "birthday": "birthday",
+    "bday": "birthday",
+    "upan dinaya": "birthday",
     "anniversary": "anniversary",
-    "wedding": "wedding", "engagement": "wedding",
-    "graduation": "graduation", "graduated": "graduation", "graduate": "graduation",
-    "valentine": "valentine", "valentines": "valentine",
-    "new year": "new_year", "newyear": "new_year", "avurudu": "new_year", "aluth avurudu": "new_year",
-    "christmas": "christmas", "xmas": "christmas", "nattal": "christmas",
-    "get well": "get_well", "recovery": "get_well",
-    "congrats": "congratulations", "congratulations": "congratulations",
-    "thank you": "thank_you", "thanks": "thank_you",
+    "wedding": "wedding",
+    "engagement": "wedding",
+    "graduation": "graduation",
+    "graduated": "graduation",
+    "graduate": "graduation",
+    "valentine": "valentine",
+    "valentines": "valentine",
+    "new year": "new_year",
+    "newyear": "new_year",
+    "avurudu": "new_year",
+    "aluth avurudu": "new_year",
+    "christmas": "christmas",
+    "xmas": "christmas",
+    "nattal": "christmas",
+    "get well": "get_well",
+    "recovery": "get_well",
+    "congrats": "congratulations",
+    "congratulations": "congratulations",
+    "thank you": "thank_you",
+    "thanks": "thank_you",
 }
 
-TODAY_WORDS = ["today", "ada", "now", "asap", "urgent", "ikmanin", "same day", "same-day", "immediately"]
+TODAY_WORDS = [
+    "today",
+    "ada",
+    "now",
+    "asap",
+    "urgent",
+    "ikmanin",
+    "same day",
+    "same-day",
+    "immediately",
+]
 TOMORROW_WORDS = ["tomorrow", "heta", "udeta", "next day"]
 FAST_WORDS = ["fast", "express", "quick", "speedy", "priority"]
 
 # Category synonyms (multilingual) → canonical English term used for MCP search
 # and for relevance category matching.
 CATEGORY_SYNONYMS: Dict[str, List[str]] = {
-    "flowers": ["flower", "flowers", "roses", "rose", "bouquet", "mal", "mala", "මල්", "කුසුම්", "carnation", "orchid"],
+    "flowers": [
+        "flower",
+        "flowers",
+        "roses",
+        "rose",
+        "bouquet",
+        "mal",
+        "mala",
+        "මල්",
+        "කුසුම්",
+        "carnation",
+        "orchid",
+    ],
     "cake": ["cake", "cakes", "keki", "කේක්", "gateau", "cup cake", "cupcake"],
-    "chocolate": ["chocolate", "chocolates", "choc", "චොක්ලට්", "ferrero", "lindt", "toblerone"],
-    "tea": ["tea", "ceylon tea", "තේ", "tea bags", "dilmah", "qualitea", "basilur", "green tea"],
+    "chocolate": [
+        "chocolate",
+        "chocolates",
+        "choc",
+        "චොක්ලට්",
+        "ferrero",
+        "lindt",
+        "toblerone",
+    ],
+    "tea": [
+        "tea",
+        "ceylon tea",
+        "තේ",
+        "tea bags",
+        "dilmah",
+        "qualitea",
+        "basilur",
+        "green tea",
+    ],
     "coffee": ["coffee", "කෝපි", "nescafe"],
-    "groceries": ["grocery", "groceries", "rice", "sugar", "milk", "snacks", "බඩු", "සිල්ලර", "flour", "dhal", "noodles"],
+    "groceries": [
+        "grocery",
+        "groceries",
+        "rice",
+        "sugar",
+        "milk",
+        "snacks",
+        "බඩු",
+        "සිල්ලර",
+        "flour",
+        "dhal",
+        "noodles",
+    ],
     "fruits": ["fruit", "fruits", "පළතුරු", "apple", "mango", "grapes", "berries"],
-    "gifts": ["gift", "gifts", "hamper", "present", "යාග", "gift pack", "gift set", "combo"],
+    "gifts": [
+        "gift",
+        "gifts",
+        "hamper",
+        "present",
+        "යාග",
+        "gift pack",
+        "gift set",
+        "combo",
+    ],
     "toys": ["toy", "toys", "teddy", "සෙල්ලම්", "soft toy", "doll", "lego"],
     "perfume": ["perfume", "fragrance", "cologne", "scent", "eau de"],
     "watches": ["watch", "watches", "wristwatch"],
-    "jewellery": ["jewellery", "jewelry", "ring", "necklace", "bracelet", "earring", "pendant"],
-    "electronics": ["electronic", "electronics", "phone", "headphone", "earbud", "gadget", "speaker", "charger"],
+    "jewellery": [
+        "jewellery",
+        "jewelry",
+        "ring",
+        "necklace",
+        "bracelet",
+        "earring",
+        "pendant",
+    ],
+    "electronics": [
+        "electronic",
+        "electronics",
+        "phone",
+        "headphone",
+        "earbud",
+        "gadget",
+        "speaker",
+        "charger",
+    ],
     "cosmetics": ["cosmetic", "cosmetics", "makeup", "lipstick", "skincare", "cream"],
     "clothing": ["clothing", "shirt", "saree", "dress", "tshirt", "t-shirt", "frock"],
     "books": ["book", "books", "novel", "stationery"],
@@ -119,22 +247,94 @@ _KEYWORD_TO_CATEGORY: List[Tuple[str, str]] = sorted(
 )
 
 STOPWORDS = {
-    "i", "need", "want", "would", "like", "get", "buy", "send", "order", "looking",
-    "under", "below", "less", "than", "around", "about", "upto", "up", "max", "maximum",
-    "for", "the", "a", "an", "my", "to", "and", "or", "with", "in", "on", "at", "of",
-    "lkr", "rs", "rupees", "rupee", "budget", "deliver", "delivery", "delivered",
-    "please", "some", "something", "anything", "give", "me", "us", "we", "is", "are",
-    "mata", "mage", "eka", "ekak", "ekata", "karanna", "one", "ow", "denna", "thiyenawa",
-    "machan", "machang", "ko", "da", "nම්", "ඕන", "ඕනේ", "එක", "එකක්",
+    "i",
+    "need",
+    "want",
+    "would",
+    "like",
+    "get",
+    "buy",
+    "send",
+    "order",
+    "looking",
+    "under",
+    "below",
+    "less",
+    "than",
+    "around",
+    "about",
+    "upto",
+    "up",
+    "max",
+    "maximum",
+    "for",
+    "the",
+    "a",
+    "an",
+    "my",
+    "to",
+    "and",
+    "or",
+    "with",
+    "in",
+    "on",
+    "at",
+    "of",
+    "lkr",
+    "rs",
+    "rupees",
+    "rupee",
+    "budget",
+    "deliver",
+    "delivery",
+    "delivered",
+    "please",
+    "some",
+    "something",
+    "anything",
+    "give",
+    "me",
+    "us",
+    "we",
+    "is",
+    "are",
+    "mata",
+    "mage",
+    "eka",
+    "ekak",
+    "ekata",
+    "karanna",
+    "one",
+    "ow",
+    "denna",
+    "thiyenawa",
+    "machan",
+    "machang",
+    "ko",
+    "da",
+    "nම්",
+    "ඕන",
+    "ඕනේ",
+    "එක",
+    "එකක්",
 }
 
 # Staple categories where buying multiple units to fill a basket is natural.
-STAPLE_CATEGORIES = {"groceries", "tea", "coffee", "chocolate", "fruits", "household", "baby"}
+STAPLE_CATEGORIES = {
+    "groceries",
+    "tea",
+    "coffee",
+    "chocolate",
+    "fruits",
+    "household",
+    "baby",
+}
 
 
 # ─────────────────────────────────────────────────────────────────────────
 #  Intent parsing
 # ─────────────────────────────────────────────────────────────────────────
+
 
 def _detect_language(text: str, client_language: Optional[str]) -> str:
     if client_language:
@@ -146,8 +346,21 @@ def _detect_language(text: str, client_language: Optional[str]) -> str:
         return "en"
     if re.search(r"[\u0d80-\u0dff]", text):
         return "si"
-    tanglish_markers = ["mata", "machan", "machang", "ekak", "karanna", " tika", "ikmanin",
-                        " valata", "ekata", "denna", "thiyenawa", "yaaluwa", "ammata"]
+    tanglish_markers = [
+        "mata",
+        "machan",
+        "machang",
+        "ekak",
+        "karanna",
+        " tika",
+        "ikmanin",
+        " valata",
+        "ekata",
+        "denna",
+        "thiyenawa",
+        "yaaluwa",
+        "ammata",
+    ]
     hits = sum(1 for w in tanglish_markers if w in f" {text.lower()} ")
     if hits >= 2:
         return "tanglish"
@@ -155,8 +368,10 @@ def _detect_language(text: str, client_language: Optional[str]) -> str:
 
 
 # Units that mean a number is a measurement/quantity, not a budget.
-_UNIT_AFTER = r"(?:kg|g|gram|grams|ml|l|litre|liter|pcs|pc|pack|packs|packet|packets|" \
-              r"bag|bags|box|boxes|piece|pieces|nos|set|sets|am|pm|kmph|km|%|st|nd|rd|th)"
+_UNIT_AFTER = (
+    r"(?:kg|g|gram|grams|ml|l|litre|liter|pcs|pc|pack|packs|packet|packets|"
+    r"bag|bags|box|boxes|piece|pieces|nos|set|sets|am|pm|kmph|km|%|st|nd|rd|th)"
+)
 
 
 def _extract_budget(text: str, user_profile: Optional[Dict] = None) -> Optional[float]:
@@ -187,7 +402,10 @@ def _extract_budget(text: str, user_profile: Optional[Dict] = None) -> Optional[
         return float(m.group(1))
 
     # 5) intent-anchored amount: under/below/around/budget 10000
-    m = re.search(r"(?:under|below|upto|up to|around|about|max|maximum|budget(?:\s*of)?)\s*(\d{3,7})", raw)
+    m = re.search(
+        r"(?:under|below|upto|up to|around|about|max|maximum|budget(?:\s*of)?)\s*(\d{3,7})",
+        raw,
+    )
     if m:
         return float(m.group(1))
 
@@ -195,7 +413,7 @@ def _extract_budget(text: str, user_profile: Optional[Dict] = None) -> Optional[
     #    is not immediately followed by a measurement unit.
     for m in re.finditer(r"\b(\d{3,7})\b", raw):
         num = int(m.group(1))
-        tail = raw[m.end():m.end() + 8].lstrip()
+        tail = raw[m.end() : m.end() + 8].lstrip()
         if re.match(_UNIT_AFTER, tail):
             continue
         if 1900 <= num <= 2100:  # looks like a year
@@ -214,7 +432,10 @@ def _extract_quantity(text: str) -> int:
     m = re.search(r"\bx\s*(\d{1,2})\b", raw) or re.search(r"\b(\d{1,2})\s*x\b", raw)
     if m:
         return max(1, min(int(m.group(1)), 20))
-    m = re.search(r"\b(\d{1,2})\s+(?:packs?|packets?|boxes?|pieces?|pcs|nos|units?|bottles?|bunch(?:es)?)\b", raw)
+    m = re.search(
+        r"\b(\d{1,2})\s+(?:packs?|packets?|boxes?|pieces?|pcs|nos|units?|bottles?|bunch(?:es)?)\b",
+        raw,
+    )
     if m:
         return max(1, min(int(m.group(1)), 20))
     return 1
@@ -226,7 +447,9 @@ def _extract_city(text: str, user_profile: Optional[Dict] = None) -> str:
         if re.search(rf"\b{re.escape(key)}\b", lower):
             return canonical
     # "deliver to X" / "to X" / "in X" — capture a candidate place for MCP to resolve.
-    m = re.search(r"(?:deliver(?:y)?\s+to|send\s+to|\bto\b|\bin\b)\s+([a-z]{4,})", lower)
+    m = re.search(
+        r"(?:deliver(?:y)?\s+to|send\s+to|\bto\b|\bin\b)\s+([a-z]{4,})", lower
+    )
     if m:
         token = m.group(1)
         if token not in STOPWORDS:
@@ -252,7 +475,9 @@ def _detect_recipient(text: str) -> Optional[str]:
     return None
 
 
-def _extract_gift_mode(text: str, occasion: Optional[str], recipient: Optional[str]) -> bool:
+def _extract_gift_mode(
+    text: str, occasion: Optional[str], recipient: Optional[str]
+) -> bool:
     lower = text.lower()
     if occasion or (recipient and recipient not in {"team"}):
         return True
@@ -312,7 +537,11 @@ def build_search_queries(
 ) -> List[str]:
     """Generate MCP-friendly English search queries from multilingual intent."""
     queries: List[str] = []
-    matched_categories = matched_categories if matched_categories is not None else _matched_categories(text)
+    matched_categories = (
+        matched_categories
+        if matched_categories is not None
+        else _matched_categories(text)
+    )
     keywords = keywords if keywords is not None else _extract_keywords(text)
 
     if category_hint:
@@ -428,6 +657,7 @@ def _gift_message(lang: str, occasion: Optional[str], recipient: Optional[str]) 
 #  Relevance engine
 # ─────────────────────────────────────────────────────────────────────────
 
+
 def _price(p: Dict) -> float:
     price = p.get("price", 0)
     if isinstance(price, dict):
@@ -468,25 +698,30 @@ def relevance_score(product: Dict, intent: Dict) -> float:
             score += 2.2
 
     # 3) Gift suitability.
-    if intent.get("gift_mode") and any(k in cat for k in ["gift", "flower", "chocolate", "cake", "hamper", "perfume", "jewel"]):
+    if intent.get("gift_mode") and any(
+        k in cat
+        for k in ["gift", "flower", "chocolate", "cake", "hamper", "perfume", "jewel"]
+    ):
         score += 2.0
 
     # 4) Profile preferences (order history categories).
-    for pref in (intent.get("_profile_categories") or []):
+    for pref in intent.get("_profile_categories") or []:
         if pref and pref in cat:
             score += 1.5
 
     # 4b) Saved bookmarks — starred items get a strong boost.
     if product.get("id") in (intent.get("_saved_product_ids") or []):
         score += 3.5
-    for saved_cat in (intent.get("_saved_categories") or []):
+    for saved_cat in intent.get("_saved_categories") or []:
         if saved_cat and saved_cat in cat:
             score += 1.2
 
     # 5) Availability & delivery urgency.
     if product.get("in_stock", True):
         score += 0.5
-    if intent.get("delivery_speed") in ("today", "fast") and product.get("delivery_speed") in ("Today", "Fast"):
+    if intent.get("delivery_speed") in ("today", "fast") and product.get(
+        "delivery_speed"
+    ) in ("Today", "Fast"):
         score += 1.2
 
     # 6) Mild prior so an empty-keyword query still ranks sensibly.
@@ -498,6 +733,7 @@ def relevance_score(product: Dict, intent: Dict) -> float:
 # ─────────────────────────────────────────────────────────────────────────
 #  Cart selection
 # ─────────────────────────────────────────────────────────────────────────
+
 
 def _reason(lang: str, en: str, si: str, tg: str, **kw) -> str:
     template = {"si": si, "tanglish": tg}.get(lang, en)
@@ -518,24 +754,36 @@ def _category_cap(num_categories: int, max_items: int) -> int:
 
 def _build_reason(mode: str, lang: str, name: str) -> str:
     if mode == "cheaper":
-        return _reason(lang,
-                       "Smart-value pick — {name} stretches your budget further.",
-                       "වටිනාකම — {name} අයවැයට හොඳයි.",
-                       "Value pick — {name} budget ekata fits.", name=name)
+        return _reason(
+            lang,
+            "Smart-value pick — {name} stretches your budget further.",
+            "වටිනාකම — {name} අයවැයට හොඳයි.",
+            "Value pick — {name} budget ekata fits.",
+            name=name,
+        )
     if mode == "premium":
-        return _reason(lang,
-                       "Premium upgrade — {name} for a more impressive gift.",
-                       "ප්‍රිමියම් — {name} වඩාත් විශිෂ්ටයි.",
-                       "Premium — {name} godak impressive ekak.", name=name)
+        return _reason(
+            lang,
+            "Premium upgrade — {name} for a more impressive gift.",
+            "ප්‍රිමියම් — {name} වඩාත් විශිෂ්ටයි.",
+            "Premium — {name} godak impressive ekak.",
+            name=name,
+        )
     if mode == "fast":
-        return _reason(lang,
-                       "Quick delivery — {name} can ship fast via Kapruka.",
-                       "ඉක්මන් — {name} ඉක්මනින් එවිය හැක.",
-                       "Fast delivery — {name} ikmanata enawa.", name=name)
-    return _reason(lang,
-                   "Best match — {name} fits exactly what you asked for.",
-                   "හොඳම ගැලපීම — {name} ඔබ ඉල්ලූ දෙයට සරිලයි.",
-                   "Best match — {name} oya illapu ekata perfect.", name=name)
+        return _reason(
+            lang,
+            "Quick delivery — {name} can ship fast via Kapruka.",
+            "ඉක්මන් — {name} ඉක්මනින් එවිය හැක.",
+            "Fast delivery — {name} ikmanata enawa.",
+            name=name,
+        )
+    return _reason(
+        lang,
+        "Best match — {name} fits exactly what you asked for.",
+        "හොඳම ගැලපීම — {name} ඔබ ඉල්ලූ දෙයට සරිලයි.",
+        "Best match — {name} oya illapu ekata perfect.",
+        name=name,
+    )
 
 
 def _select(
@@ -564,7 +812,9 @@ def _select(
     else:  # initial / fast → relevance first, cheaper breaks ties
         pool.sort(key=lambda p: (-rel[id(p)], _price(p)))
 
-    distinct_categories = len({_product_category(p) for p in pool if _product_category(p)})
+    distinct_categories = len(
+        {_product_category(p) for p in pool if _product_category(p)}
+    )
     cat_cap = _category_cap(distinct_categories, max_items)
 
     picked: List[Dict] = []
@@ -583,7 +833,13 @@ def _select(
         # Never exceed the spend limit — the budget is a hard cap, not a target.
         if total + cost > spend_limit:
             return False
-        picked.append({**product, "quantity": qty, "reason": _build_reason(mode, lang, product.get("name", "item"))})
+        picked.append(
+            {
+                **product,
+                "quantity": qty,
+                "reason": _build_reason(mode, lang, product.get("name", "item")),
+            }
+        )
         cat_counts[cat] = cat_counts.get(cat, 0) + 1
         total += cost
         return True
@@ -605,9 +861,14 @@ def _select(
                 price = _price(item)
                 if price <= 0:
                     continue
-                if any(s in cat for s in STAPLE_CATEGORIES) and price < spend_limit * 0.18:
+                if (
+                    any(s in cat for s in STAPLE_CATEGORIES)
+                    and price < spend_limit * 0.18
+                ):
                     target_qty = quantity_hint if quantity_hint > 1 else 2
-                    while item["quantity"] < target_qty and total + price <= spend_limit:
+                    while (
+                        item["quantity"] < target_qty and total + price <= spend_limit
+                    ):
                         item["quantity"] += 1
                         total += price
                 if total >= spend_limit * 0.9:
@@ -627,7 +888,13 @@ def _select(
         # surface a plan that blows the requested limit.
         affordable = [p for p in pool if _price(p) <= spend_limit]
         fallback = min(affordable or pool, key=_price)
-        picked.append({**fallback, "quantity": 1, "reason": _build_reason(mode, lang, fallback.get("name", "item"))})
+        picked.append(
+            {
+                **fallback,
+                "quantity": 1,
+                "reason": _build_reason(mode, lang, fallback.get("name", "item")),
+            }
+        )
 
     return picked
 
@@ -651,7 +918,9 @@ def build_carts_mcp(
                 saved_cats.append(c)
         intent = {
             **intent,
-            "_profile_categories": [c.lower() for c in user_profile.get("preferred_categories", [])],
+            "_profile_categories": [
+                c.lower() for c in user_profile.get("preferred_categories", [])
+            ],
             "_saved_product_ids": list(user_profile.get("saved_product_ids") or []),
             "_saved_categories": saved_cats,
         }
@@ -672,7 +941,9 @@ def build_carts_mcp(
     priced = [p for p in products if _price(p) > 0]
     in_stock = [p for p in priced if p.get("in_stock", True)]
     over_budget = [p for p in in_stock if _price(p) > limit]
-    fast_available = [p for p in in_stock if p.get("delivery_speed") in ("Today", "Fast")]
+    fast_available = [
+        p for p in in_stock if p.get("delivery_speed") in ("Today", "Fast")
+    ]
     stats = {
         "total_found": len(products),
         "priced": len(priced),
@@ -685,7 +956,9 @@ def build_carts_mcp(
         "delivery_fee": delivery_fee,
     }
 
-    story = _build_story(intent, products, canonical_city, delivery_fee, budget, carts, user_profile)
+    story = _build_story(
+        intent, products, canonical_city, delivery_fee, budget, carts, user_profile
+    )
     return {"cart_versions": carts, "story": story, "stats": stats}
 
 
@@ -716,8 +989,10 @@ def _build_story(
         elif lang == "tanglish":
             profile_note = f"Oya past orders {user_profile['order_count']} balala {city_pref} ekata personalize kala."
         else:
-            profile_note = (f"Personalized from your {user_profile['order_count']} past order(s) — "
-                            f"you usually ship to {city_pref}.")
+            profile_note = (
+                f"Personalized from your {user_profile['order_count']} past order(s) — "
+                f"you usually ship to {city_pref}."
+            )
 
     saved_note = ""
     saved_n = int(user_profile.get("saved_count", 0) or 0) if user_profile else 0
@@ -727,7 +1002,9 @@ def _build_story(
         elif lang == "tanglish":
             saved_note = f"Oya saved items {saved_n} cart picks walata boost kala."
         else:
-            saved_note = f"Boosted {saved_n} saved item(s) you starred when ranking products."
+            saved_note = (
+                f"Boosted {saved_n} saved item(s) you starred when ranking products."
+            )
 
     occasion_note = ""
     if occasion or recipient:
@@ -740,9 +1017,13 @@ def _build_story(
         if lang == "si":
             occasion_note = f"තෑගි අවස්ථාව හඳුනාගෙන ({ctx}) ගැලපෙන භාණ්ඩ තෝරන ලදී."
         elif lang == "tanglish":
-            occasion_note = f"Gift context ({ctx}) eka identify karala items tuned kala."
+            occasion_note = (
+                f"Gift context ({ctx}) eka identify karala items tuned kala."
+            )
         else:
-            occasion_note = f"Detected a gift context ({ctx}) and tuned the picks accordingly."
+            occasion_note = (
+                f"Detected a gift context ({ctx}) and tuned the picks accordingly."
+            )
 
     if lang == "si":
         story = [
@@ -772,6 +1053,7 @@ def _build_story(
 # ─────────────────────────────────────────────────────────────────────────
 #  User profile from order history
 # ─────────────────────────────────────────────────────────────────────────
+
 
 def build_user_profile_from_history(orders: List[Dict[str, Any]]) -> Dict[str, Any]:
     if not orders:
@@ -807,10 +1089,16 @@ def build_user_profile_from_history(orders: List[Dict[str, Any]]) -> Dict[str, A
 
         if not found_real:
             ver = (o.get("version") or "").lower()
-            fallback = {"fast": "flowers", "premium": "gifts", "cheaper": "groceries"}.get(ver, "groceries")
+            fallback = {
+                "fast": "flowers",
+                "premium": "gifts",
+                "cheaper": "groceries",
+            }.get(ver, "groceries")
             cat_counts[fallback] = cat_counts.get(fallback, 0) + 1
 
-    preferred_categories = sorted(cat_counts, key=lambda k: cat_counts[k], reverse=True)[:3]
+    preferred_categories = sorted(
+        cat_counts, key=lambda k: cat_counts[k], reverse=True
+    )[:3]
 
     return {
         "preferred_city": preferred_city,
@@ -839,11 +1127,13 @@ def enrich_user_profile_with_saved(
         cat = (p.get("category") or "").lower().strip()
         if cat:
             saved_cats.append(cat)
-        slim_saved.append({
-            "id": pid,
-            "name": p.get("name"),
-            "category": p.get("category") or "",
-        })
+        slim_saved.append(
+            {
+                "id": pid,
+                "name": p.get("name"),
+                "category": p.get("category") or "",
+            }
+        )
 
     profile["saved_product_ids"] = saved_ids
     profile["saved_count"] = len(saved_ids)

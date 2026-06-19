@@ -34,37 +34,54 @@ ALLOW_FALLBACK_CATALOG = settings.allow_fallback_catalog
 
 # Category emoji mapping for fallback icons
 CATEGORY_EMOJI_MAP = {
-    "flowers": "🌸", "flower": "🌸",
-    "cakes": "🎂", "cake": "🎂",
-    "groceries": "🛒", "grocery": "🛒",
-    "chocolates": "🍫", "chocolate": "🍫",
-    "toys": "🧸", "toy": "🧸",
+    "flowers": "🌸",
+    "flower": "🌸",
+    "cakes": "🎂",
+    "cake": "🎂",
+    "groceries": "🛒",
+    "grocery": "🛒",
+    "chocolates": "🍫",
+    "chocolate": "🍫",
+    "toys": "🧸",
+    "toy": "🧸",
     "automobile": "🚗",
     "ayurvedic": "🌿",
     "bicycle": "🚲",
-    "books": "📚", "book": "📚",
-    "electronics": "🔌", "electronic": "🔌",
-    "clothing": "👕", "fashion": "👗",
+    "books": "📚",
+    "book": "📚",
+    "electronics": "🔌",
+    "electronic": "🔌",
+    "clothing": "👕",
+    "fashion": "👗",
     "utility": "🛠️",
-    "gifts": "🎁", "gift": "🎁",
-    "hampers": "🧺", "hamper": "🧺",
-    "cosmetics": "💄", "cosmetic": "💄",
-    "fruits": "🍎", "fruit": "🍎",
-    "vegetables": "🥕", "vegetable": "🥕",
+    "gifts": "🎁",
+    "gift": "🎁",
+    "hampers": "🧺",
+    "hamper": "🧺",
+    "cosmetics": "💄",
+    "cosmetic": "💄",
+    "fruits": "🍎",
+    "fruit": "🍎",
+    "vegetables": "🥕",
+    "vegetable": "🥕",
     "household": "🏠",
-    "jewellery": "💎", "jewelry": "💎",
+    "jewellery": "💎",
+    "jewelry": "💎",
     "liquor": "🍾",
     "baby": "👶",
     "party": "🎈",
-    "perfumes": "🧪", "perfume": "🧪",
+    "perfumes": "🧪",
+    "perfume": "🧪",
     "pet": "🐶",
     "pharmacy": "💊",
-    "sports": "⚽", "sport": "⚽",
+    "sports": "⚽",
+    "sport": "⚽",
     "tea": "🍵",
     "dairy": "🥛",
     "rice": "🍚",
     "general": "📦",
 }
+
 
 def get_category_emoji(category: str) -> str:
     if not category:
@@ -75,25 +92,155 @@ def get_category_emoji(category: str) -> str:
             return emoji
     return "📦"
 
+
 # Deterministic high-quality fallback products if MCP is unavailable or returns nothing
 FALLBACK_PRODUCTS = [
-    {"id": "EF_PC_GROC0V3441P00013", "name": "Qualitea Black Tea Mint Flavoured - 20 Tea Bags", "price": {"amount": 380, "currency": "LKR"}, "image_url": "https://www.kapruka.com/cdn-cgi/image/width=300,quality=85/static/image/groceries/qualitea_mint.jpg", "category": "Tea", "category_emoji": "🍵", "in_stock": True, "delivery_speed": "Standard"},
-    {"id": "EF_PC_GROC0V3441P00014", "name": "Qualitea Black Tea Apple Flavoured - 20 Tea Bags", "price": {"amount": 380, "currency": "LKR"}, "image_url": "https://www.kapruka.com/cdn-cgi/image/width=300,quality=85/static/image/groceries/qualitea_apple.jpg", "category": "Tea", "category_emoji": "🍵", "in_stock": True, "delivery_speed": "Standard"},
-    {"id": "CATSYM_TEA_001", "name": "Dilmah Premium Ceylon Tea 100 Bags", "price": {"amount": 1250, "currency": "LKR"}, "image_url": "", "category": "Tea", "category_emoji": "🍵", "in_stock": True, "delivery_speed": "Standard"},
-    {"id": "CATSYM_TEA_PREMIUM", "name": "Basilur Tea Book Collection Vol 1", "price": {"amount": 4800, "currency": "LKR"}, "image_url": "", "category": "Tea", "category_emoji": "🍵", "in_stock": True, "delivery_speed": "Fast"},
-    {"id": "p-rice", "name": "Keeri Samba Rice Premium 5kg", "price": {"amount": 2850, "currency": "LKR"}, "image_url": "", "category": "Groceries", "category_emoji": "🛒", "in_stock": True, "delivery_speed": "Standard"},
-    {"id": "p-sugar", "name": "White Sugar 1kg Pack", "price": {"amount": 320, "currency": "LKR"}, "image_url": "", "category": "Groceries", "category_emoji": "🛒", "in_stock": True, "delivery_speed": "Standard"},
-    {"id": "p-milk", "name": "Anchor Milk Powder 1kg Pack", "price": {"amount": 2650, "currency": "LKR"}, "image_url": "", "category": "Groceries", "category_emoji": "🛒", "in_stock": True, "delivery_speed": "Standard"},
-    {"id": "p-coconut", "name": "Coconut Oil Pure 1L Bottle", "price": {"amount": 950, "currency": "LKR"}, "image_url": "", "category": "Groceries", "category_emoji": "🛒", "in_stock": True, "delivery_speed": "Standard"},
-    {"id": "p-salt", "name": "Table Salt 1kg Pack", "price": {"amount": 150, "currency": "LKR"}, "image_url": "", "category": "Groceries", "category_emoji": "🛒", "in_stock": True, "delivery_speed": "Standard"},
-    {"id": "p-gift-hamper", "name": "Classic Kapruka Fruit & Chocolate Hamper", "price": {"amount": 9500, "currency": "LKR"}, "image_url": "", "category": "Gifts", "category_emoji": "🎁", "in_stock": True, "delivery_speed": "Fast"},
-    {"id": "p-chocolate-box", "name": "Ferrero Rocher Chocolate Gift Box 24pcs", "price": {"amount": 6500, "currency": "LKR"}, "image_url": "", "category": "Chocolates", "category_emoji": "🍫", "in_stock": True, "delivery_speed": "Fast"},
-    {"id": "CAKESHG00216", "name": "Shangri-la Pettah Tea Mousse Cake 1kg", "price": {"amount": 16880, "currency": "LKR"}, "image_url": "", "category": "Cakes", "category_emoji": "🎂", "in_stock": True, "delivery_speed": "Today"},
-    {"id": "p-roses-bouquet", "name": "Elegant Red Roses Bouquet (12 Blooms)", "price": {"amount": 5500, "currency": "LKR"}, "image_url": "", "category": "Flowers", "category_emoji": "🌸", "in_stock": True, "delivery_speed": "Today"},
-    {"id": "p-teddy", "name": "Fluffy Teddy Bear Soft Toy (Brown)", "price": {"amount": 3500, "currency": "LKR"}, "image_url": "", "category": "Toys", "category_emoji": "🧸", "in_stock": True, "delivery_speed": "Fast"}
+    {
+        "id": "EF_PC_GROC0V3441P00013",
+        "name": "Qualitea Black Tea Mint Flavoured - 20 Tea Bags",
+        "price": {"amount": 380, "currency": "LKR"},
+        "image_url": "https://www.kapruka.com/cdn-cgi/image/width=300,quality=85/static/image/groceries/qualitea_mint.jpg",
+        "category": "Tea",
+        "category_emoji": "🍵",
+        "in_stock": True,
+        "delivery_speed": "Standard",
+    },
+    {
+        "id": "EF_PC_GROC0V3441P00014",
+        "name": "Qualitea Black Tea Apple Flavoured - 20 Tea Bags",
+        "price": {"amount": 380, "currency": "LKR"},
+        "image_url": "https://www.kapruka.com/cdn-cgi/image/width=300,quality=85/static/image/groceries/qualitea_apple.jpg",
+        "category": "Tea",
+        "category_emoji": "🍵",
+        "in_stock": True,
+        "delivery_speed": "Standard",
+    },
+    {
+        "id": "CATSYM_TEA_001",
+        "name": "Dilmah Premium Ceylon Tea 100 Bags",
+        "price": {"amount": 1250, "currency": "LKR"},
+        "image_url": "",
+        "category": "Tea",
+        "category_emoji": "🍵",
+        "in_stock": True,
+        "delivery_speed": "Standard",
+    },
+    {
+        "id": "CATSYM_TEA_PREMIUM",
+        "name": "Basilur Tea Book Collection Vol 1",
+        "price": {"amount": 4800, "currency": "LKR"},
+        "image_url": "",
+        "category": "Tea",
+        "category_emoji": "🍵",
+        "in_stock": True,
+        "delivery_speed": "Fast",
+    },
+    {
+        "id": "p-rice",
+        "name": "Keeri Samba Rice Premium 5kg",
+        "price": {"amount": 2850, "currency": "LKR"},
+        "image_url": "",
+        "category": "Groceries",
+        "category_emoji": "🛒",
+        "in_stock": True,
+        "delivery_speed": "Standard",
+    },
+    {
+        "id": "p-sugar",
+        "name": "White Sugar 1kg Pack",
+        "price": {"amount": 320, "currency": "LKR"},
+        "image_url": "",
+        "category": "Groceries",
+        "category_emoji": "🛒",
+        "in_stock": True,
+        "delivery_speed": "Standard",
+    },
+    {
+        "id": "p-milk",
+        "name": "Anchor Milk Powder 1kg Pack",
+        "price": {"amount": 2650, "currency": "LKR"},
+        "image_url": "",
+        "category": "Groceries",
+        "category_emoji": "🛒",
+        "in_stock": True,
+        "delivery_speed": "Standard",
+    },
+    {
+        "id": "p-coconut",
+        "name": "Coconut Oil Pure 1L Bottle",
+        "price": {"amount": 950, "currency": "LKR"},
+        "image_url": "",
+        "category": "Groceries",
+        "category_emoji": "🛒",
+        "in_stock": True,
+        "delivery_speed": "Standard",
+    },
+    {
+        "id": "p-salt",
+        "name": "Table Salt 1kg Pack",
+        "price": {"amount": 150, "currency": "LKR"},
+        "image_url": "",
+        "category": "Groceries",
+        "category_emoji": "🛒",
+        "in_stock": True,
+        "delivery_speed": "Standard",
+    },
+    {
+        "id": "p-gift-hamper",
+        "name": "Classic Kapruka Fruit & Chocolate Hamper",
+        "price": {"amount": 9500, "currency": "LKR"},
+        "image_url": "",
+        "category": "Gifts",
+        "category_emoji": "🎁",
+        "in_stock": True,
+        "delivery_speed": "Fast",
+    },
+    {
+        "id": "p-chocolate-box",
+        "name": "Ferrero Rocher Chocolate Gift Box 24pcs",
+        "price": {"amount": 6500, "currency": "LKR"},
+        "image_url": "",
+        "category": "Chocolates",
+        "category_emoji": "🍫",
+        "in_stock": True,
+        "delivery_speed": "Fast",
+    },
+    {
+        "id": "CAKESHG00216",
+        "name": "Shangri-la Pettah Tea Mousse Cake 1kg",
+        "price": {"amount": 16880, "currency": "LKR"},
+        "image_url": "",
+        "category": "Cakes",
+        "category_emoji": "🎂",
+        "in_stock": True,
+        "delivery_speed": "Today",
+    },
+    {
+        "id": "p-roses-bouquet",
+        "name": "Elegant Red Roses Bouquet (12 Blooms)",
+        "price": {"amount": 5500, "currency": "LKR"},
+        "image_url": "",
+        "category": "Flowers",
+        "category_emoji": "🌸",
+        "in_stock": True,
+        "delivery_speed": "Today",
+    },
+    {
+        "id": "p-teddy",
+        "name": "Fluffy Teddy Bear Soft Toy (Brown)",
+        "price": {"amount": 3500, "currency": "LKR"},
+        "image_url": "",
+        "category": "Toys",
+        "category_emoji": "🧸",
+        "in_stock": True,
+        "delivery_speed": "Fast",
+    },
 ]
 
-def _infer_delivery_speed(cat_name: str, name: str, price_val: float, raw: Dict[str, Any]) -> str:
+
+def _infer_delivery_speed(
+    cat_name: str, name: str, price_val: float, raw: Dict[str, Any]
+) -> str:
     """Use MCP-provided delivery info when available, else a sensible heuristic."""
     # 1) Trust explicit MCP fields if the catalog exposes them.
     explicit = raw.get("delivery_speed") or raw.get("delivery_type")
@@ -122,13 +269,13 @@ def _infer_delivery_speed(cat_name: str, name: str, price_val: float, raw: Dict[
 
 # Common UTF-8-as-Latin-1 mojibake sequences seen in the Kapruka catalog feed.
 _MOJIBAKE_MAP = {
-    "\u00e2\u20ac\u201c": "–",   # â€“ → en dash
-    "\u00e2\u20ac\u201d": "—",   # â€” → em dash
+    "\u00e2\u20ac\u201c": "–",  # â€“ → en dash
+    "\u00e2\u20ac\u201d": "—",  # â€” → em dash
     "\u00e2\u20ac\u0153": "\u201c",  # â€œ → left double quote
     "\u00e2\u20ac\u009d": "\u201d",  # â€ → right double quote
-    "\u00e2\u20ac\u2122": "'",   # â€™ → apostrophe
-    "\u00e2\u20ac\u02dc": "'",   # â€˜ → left single quote
-    "\u00c2\u00a0": " ",         # Â  → non-breaking space
+    "\u00e2\u20ac\u2122": "'",  # â€™ → apostrophe
+    "\u00e2\u20ac\u02dc": "'",  # â€˜ → left single quote
+    "\u00c2\u00a0": " ",  # Â  → non-breaking space
 }
 
 
@@ -146,7 +293,9 @@ def _clean_text(value: Any) -> str:
     return re.sub(r"\s{2,}", " ", text).strip(" -–—")
 
 
-def _normalize_product(item: Dict[str, Any], default_category: str = "General") -> Optional[Dict[str, Any]]:
+def _normalize_product(
+    item: Dict[str, Any], default_category: str = "General"
+) -> Optional[Dict[str, Any]]:
     """Convert a raw MCP product record into the internal product shape."""
     p_id = item.get("id")
     if not p_id:
@@ -154,7 +303,11 @@ def _normalize_product(item: Dict[str, Any], default_category: str = "General") 
     p_price = item.get("price", {})
     price_val = p_price.get("amount") if isinstance(p_price, dict) else p_price
     cat = item.get("category", {})
-    cat_name = cat.get("name", default_category) if isinstance(cat, dict) else str(cat or default_category)
+    cat_name = (
+        cat.get("name", default_category)
+        if isinstance(cat, dict)
+        else str(cat or default_category)
+    )
     cat_name = _clean_text(cat_name) or default_category
     image_url = item.get("image_url") or item.get("image") or ""
     name = _clean_text(item.get("name"))
@@ -164,14 +317,18 @@ def _normalize_product(item: Dict[str, Any], default_category: str = "General") 
         "summary": _clean_text(item.get("summary", "") or item.get("description", "")),
         "price": {
             "amount": price_val or 0,
-            "currency": p_price.get("currency", "LKR") if isinstance(p_price, dict) else "LKR",
+            "currency": p_price.get("currency", "LKR")
+            if isinstance(p_price, dict)
+            else "LKR",
         },
         "image_url": image_url,
         "url": item.get("url") or "",
         "category_emoji": get_category_emoji(cat_name),
         "in_stock": item.get("in_stock", True),
         "category": cat_name,
-        "delivery_speed": _infer_delivery_speed(cat_name, name or "", price_val or 0, item),
+        "delivery_speed": _infer_delivery_speed(
+            cat_name, name or "", price_val or 0, item
+        ),
     }
 
 
@@ -204,8 +361,11 @@ async def _fetch_products(
                 products.append(normalized)
     except Exception as e:
         print(f"Error parsing MCP results for '{query}': {e}")
-        print(f"Raw MCP response for '{query}' was: {mcp_res[:500] if mcp_res else 'None'}")
+        print(
+            f"Raw MCP response for '{query}' was: {mcp_res[:500] if mcp_res else 'None'}"
+        )
     return products
+
 
 async def run_intent_agent(
     user_text: str,
@@ -214,8 +374,11 @@ async def run_intent_agent(
     category_hint: Optional[str] = None,
 ) -> Dict[str, Any]:
     """1. Intent Agent: MCP-native deterministic intent parsing."""
-    print(f"run_intent_agent input: user_text='{user_text}', client_language='{client_language}'")
+    print(
+        f"run_intent_agent input: user_text='{user_text}', client_language='{client_language}'"
+    )
     return parse_intent_mcp(user_text, client_language, user_profile, category_hint)
+
 
 def _dedupe_products(product_lists: List[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
     seen_ids = set()
@@ -263,8 +426,12 @@ async def _run_shopping_agent(
         broaden = [t for t in extra_terms if t and t.lower() not in seen_terms][:4]
         if broaden:
             print(f"Only {len(all_products)} products — broadening search: {broaden}")
-            broaden_tasks = [_fetch_products(session, t, set(), limit=40) for t in broaden]
-            broaden_results = await asyncio.gather(*broaden_tasks, return_exceptions=True)
+            broaden_tasks = [
+                _fetch_products(session, t, set(), limit=40) for t in broaden
+            ]
+            broaden_results = await asyncio.gather(
+                *broaden_tasks, return_exceptions=True
+            )
             broaden_lists = [r for r in broaden_results if isinstance(r, list)]
             all_products = _dedupe_products([all_products, *broaden_lists])
 
@@ -352,7 +519,9 @@ async def hydrate_product_images(
             raw = await call_tool(
                 session,
                 "kapruka_get_product",
-                arguments={"params": {"product_id": product["id"], "response_format": "json"}},
+                arguments={
+                    "params": {"product_id": product["id"], "response_format": "json"}
+                },
             )
         data = parse_json_response(raw)
         if not data:
@@ -368,7 +537,10 @@ async def hydrate_product_images(
             product["in_stock"] = bool(data["in_stock"])
         # Refresh delivery speed from authoritative product detail if present.
         speed = _infer_delivery_speed(
-            product.get("category", ""), product.get("name", ""), _price_amount(product), data
+            product.get("category", ""),
+            product.get("name", ""),
+            _price_amount(product),
+            data,
         )
         if speed != "Standard" or product.get("delivery_speed") == "Standard":
             product["delivery_speed"] = speed
@@ -462,6 +634,7 @@ async def run_delivery_agent(
 
     return canonical_city, delivery_fee
 
+
 async def run_cart_agent(
     intent: Dict[str, Any],
     products: List[Dict[str, Any]],
@@ -484,23 +657,35 @@ async def execute_agent_pipeline(
     print("--- Starting Agent Pipeline ---")
     pipeline_events: List[Dict[str, Any]] = []
 
-    emit_event(pipeline_events, "understanding", "Analyzing your shopping intent...", "mcp_intelligence")
+    emit_event(
+        pipeline_events,
+        "understanding",
+        "Analyzing your shopping intent...",
+        "mcp_intelligence",
+    )
     print("Step 1: Running Intent Agent (MCP)")
-    intent = await run_intent_agent(user_text, client_language, user_profile, category_hint)
+    intent = await run_intent_agent(
+        user_text, client_language, user_profile, category_hint
+    )
     if override_budget is not None:
         intent["budget"] = override_budget
         print("Budget overridden from slider:", override_budget)
     print("Intent extracted:", intent)
 
     budget_val = intent.get("budget", 25000.0)
-    understood_bits = [f"budget LKR {budget_val:,.0f}", f"deliver to {intent.get('city', 'Colombo 01')}"]
+    understood_bits = [
+        f"budget LKR {budget_val:,.0f}",
+        f"deliver to {intent.get('city', 'Colombo 01')}",
+    ]
     if intent.get("occasion"):
         understood_bits.append(intent["occasion"].replace("_", " "))
     if intent.get("recipient"):
         understood_bits.append(f"for {intent['recipient']}")
     if intent.get("gift_mode"):
         understood_bits.append("gift")
-    lang_label = {"si": "Sinhala", "tanglish": "Tanglish", "en": "English"}.get(intent.get("language"), "English")
+    lang_label = {"si": "Sinhala", "tanglish": "Tanglish", "en": "English"}.get(
+        intent.get("language"), "English"
+    )
     emit_event(
         pipeline_events,
         "understanding",
@@ -530,7 +715,10 @@ async def execute_agent_pipeline(
             if intent.get("gift_mode"):
                 broaden_terms.extend(["gift hamper", "chocolates"])
             products = await _run_shopping_agent(
-                session, intent.get("search_queries", []), pipeline_events, broaden_terms
+                session,
+                intent.get("search_queries", []),
+                pipeline_events,
+                broaden_terms,
             )
             products = await hydrate_product_images(session, products, pipeline_events)
             print(f"Products fetched: {len(products)}")
@@ -551,9 +739,13 @@ async def execute_agent_pipeline(
                 "cart_agent",
             )
             print("Step 4: Running Cart Agent")
-            cart_result = await run_cart_agent(intent, products, canonical_city, delivery_fee, user_profile)
+            cart_result = await run_cart_agent(
+                intent, products, canonical_city, delivery_fee, user_profile
+            )
     except Exception as exc:
-        logger.warning("MCP session error during pipeline (degrading gracefully): %s", exc)
+        logger.warning(
+            "MCP session error during pipeline (degrading gracefully): %s", exc
+        )
         emit_event(
             pipeline_events,
             "finding",
@@ -578,7 +770,9 @@ async def execute_agent_pipeline(
 
     # Cart building is pure (no MCP), so finish it even if the session tore down.
     if cart_result is None:
-        cart_result = await run_cart_agent(intent, products, canonical_city, delivery_fee, user_profile)
+        cart_result = await run_cart_agent(
+            intent, products, canonical_city, delivery_fee, user_profile
+        )
 
     # Surface the planner's reasoning as quantified, judge-friendly events.
     stats = cart_result.get("stats", {})
