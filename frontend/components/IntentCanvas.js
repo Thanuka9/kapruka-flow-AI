@@ -28,6 +28,7 @@ export default function IntentCanvas({
   const recogRef = useRef(null);
   const typingTimerRef = useRef(null);
   const inputRef = useRef(null);
+  const initialTextRef = useRef("");
 
   const mcpBadge = getMcpStatusPresentation(mcpStatus, strings);
 
@@ -67,15 +68,33 @@ export default function IntentCanvas({
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     
+    initialTextRef.current = text.trim();
     const r = new SpeechRecognition();
-    // Use proper Sinhala language code for Sinhala/Tanglish modes to ensure accurate recognition
     r.lang = language === "en-LK" ? "si-LK" : language;
-    r.interimResults = false;
+    r.interimResults = true;
+    r.continuous = true;
+    
+    let finalTranscript = "";
     
     r.onstart = () => setListening(true);
     r.onresult = (ev) => {
-      const t = ev.results[0][0].transcript;
-      setText((prev) => (prev ? prev + " " + t : t));
+      let interimTranscript = "";
+      for (let i = ev.resultIndex; i < ev.results.length; ++i) {
+        if (ev.results[i].isFinal) {
+          finalTranscript += ev.results[i][0].transcript;
+        } else {
+          interimTranscript += ev.results[i][0].transcript;
+        }
+      }
+      
+      const combinedSpeech = (finalTranscript + interimTranscript).trim();
+      if (combinedSpeech) {
+        setText(
+          initialTextRef.current
+            ? initialTextRef.current + " " + combinedSpeech
+            : combinedSpeech
+        );
+      }
     };
     r.onend = () => {
       setListening(false);
@@ -89,7 +108,7 @@ export default function IntentCanvas({
   }
 
   function stopVoice() {
-    try { recogRef.current?.abort(); } catch (e) {}
+    try { recogRef.current?.stop(); } catch (e) {}
     setListening(false);
     recogRef.current = null;
   }
@@ -195,9 +214,17 @@ export default function IntentCanvas({
             </button>
 
             {listening && (
-              <div className="flex items-center justify-center gap-2 py-2 text-sm text-flow-muted">
-                <span className="w-2 h-2 rounded-full bg-kapruka-red animate-pulse" />
-                {s.listening}
+              <div className="flex flex-col items-center justify-center gap-3 py-4 animate-fadeIn">
+                <div className="flex items-center gap-1.5 h-8">
+                  <span className="w-1.5 h-3 bg-[#D80000] rounded-full animate-voice-bar-1" />
+                  <span className="w-1.5 h-5 bg-[#D80000] rounded-full animate-voice-bar-2" />
+                  <span className="w-1.5 h-6 bg-[#D80000] rounded-full animate-voice-bar-3" />
+                  <span className="w-1.5 h-4 bg-[#D80000] rounded-full animate-voice-bar-4" />
+                  <span className="w-1.5 h-2 bg-[#D80000] rounded-full animate-voice-bar-5" />
+                </div>
+                <div className="text-xs font-bold text-[#D80000] tracking-widest uppercase animate-pulse">
+                  {s.listening || "Listening..."}
+                </div>
               </div>
             )}
           </div>

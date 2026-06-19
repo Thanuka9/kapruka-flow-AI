@@ -984,3 +984,31 @@ select option {
   background-color: #ffffff !important;
   color: #1e293b !important;
 }
+
+/* Voice Wave Visualizer Animations */
+@keyframes voice-bar-bounce-1 {
+  0%, 100% { height: 6px; }
+  50% { height: 20px; }
+}
+@keyframes voice-bar-bounce-2 {
+  0%, 100% { height: 10px; }
+  50% { height: 24px; }
+}
+@keyframes voice-bar-bounce-3 {
+  0%, 100% { height: 12px; }
+  50% { height: 28px; }
+}
+@keyframes voice-bar-bounce-4 {
+  0%, 100% { height: 8px; }
+  50% { height: 22px; }
+}
+@keyframes voice-bar-bounce-5 {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
+
+.animate-voice-bar-1 { animation: voice-bar-bounce-1 0.75s ease-in-out infinite; }
+.animate-voice-bar-2 { animation: voice-bar-bounce-2 0.65s ease-in-out infinite; }
+.animate-voice-bar-3 { animation: voice-bar-bounce-3 0.85s ease-in-out infinite; }
+.animate-voice-bar-4 { animation: voice-bar-bounce-4 0.7s ease-in-out infinite; }
+.animate-voice-bar-5 { animation: voice-bar-bounce-5 0.8s ease-in-out infinite; }
