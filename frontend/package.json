@@ -1,0 +1,21 @@
+{
+  "name": "kapruka-flow-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "next": "13.4.7",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "framer-motion": "10.12.16"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "postcss": "8.4.23",
+    "autoprefixer": "10.4.14"
+  }
+}
