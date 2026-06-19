@@ -79,6 +79,11 @@ export default function Home() {
       }
     }
 
+    const savedLang = localStorage.getItem("kapruka_flow_lang");
+    if (savedLang) {
+      setCurrentLanguage(savedLang);
+    }
+
     if (params.get("demo") === "1") {
       [
         "kapruka_flow_session_id",
@@ -93,8 +98,12 @@ export default function Home() {
     if (urlSession) {
       restoreSession(urlSession, { goToCart: true });
     } else {
-      const savedSession = localStorage.getItem("kapruka_flow_session_id");
-      if (savedSession) restoreSession(savedSession, { goToCart: false });
+      // Clear old session from localStorage so reload starts clean (0 items)
+      localStorage.removeItem("kapruka_flow_session_id");
+      localStorage.removeItem("kapruka_flow_cart_versions");
+      localStorage.removeItem("kapruka_flow_story");
+      localStorage.removeItem("kapruka_flow_metadata");
+      localStorage.removeItem("kapruka_flow_evolution");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -137,6 +146,7 @@ export default function Home() {
 
   function handleLanguageChange(lang) {
     setCurrentLanguage(lang);
+    localStorage.setItem("kapruka_flow_lang", lang);
     if (sessionId) {
       fetch("/api/analytics", {
         method: "POST",
@@ -158,7 +168,22 @@ export default function Home() {
     if (data.metadata?.catalog_products) {
       setCatalogCache(data.metadata.catalog_products);
     }
-    const rStrings = LOCALIZED_STRINGS[currentLanguage] || LOCALIZED_STRINGS["en-US"];
+
+    // Load saved language if available, otherwise fallback to backend inferred language
+    const savedLang = localStorage.getItem("kapruka_flow_lang");
+    let activeLang = currentLanguage;
+    if (savedLang) {
+      activeLang = savedLang;
+      setCurrentLanguage(savedLang);
+    } else if (data.metadata?.intent_parsed?.language) {
+      const lang = data.metadata.intent_parsed.language;
+      if (lang === "si") activeLang = "si-LK";
+      else if (lang === "tanglish") activeLang = "en-LK";
+      else activeLang = "en-US";
+      setCurrentLanguage(activeLang);
+    }
+
+    const rStrings = LOCALIZED_STRINGS[activeLang] || LOCALIZED_STRINGS["en-US"];
     const rPrompt = data.metadata?.intent_parsed?.query || "";
     const rBubbles = buildAgentReplyBubbles(data.story || [], data.metadata || {}, rStrings);
     setChatMessages([
@@ -175,20 +200,22 @@ export default function Home() {
       setLastPrompt(data.metadata.intent_parsed.query);
     }
 
-    if (data.metadata?.intent_parsed?.language) {
-      const lang = data.metadata.intent_parsed.language;
-      if (lang === "si") setCurrentLanguage("si-LK");
-      else if (lang === "tanglish") setCurrentLanguage("en-LK");
-      else setCurrentLanguage("en-US");
-    }
-
     let validatedEvolution = [];
     if (data.evolution && data.evolution.length > 0) {
       validatedEvolution = data.evolution.filter((step) => step !== null).map((step) => {
-        if (typeof step === "object") return step;
+        if (typeof step === "object") {
+          // If cart_versions is empty/missing, fallback to data.cart_versions (especially for step 0)
+          if (!step.cart_versions || Object.keys(step.cart_versions).length === 0) {
+            return {
+              ...step,
+              cart_versions: data.cart_versions || {}
+            };
+          }
+          return step;
+        }
         return {
           label: String(step),
-          cart_versions: data.cart_versions,
+          cart_versions: data.cart_versions || {},
           active_version: "initial",
           budget_limit: data.metadata?.budget_limit ?? 25000.0,
           last_prompt: data.metadata?.intent_parsed?.query || "",
@@ -298,7 +325,7 @@ export default function Home() {
           user_email: user?.email || null,
           saved_products: getSavedProductsPayload(),
           category_hint: activeCategoryHint || null,
-          evolution: [...evolution.filter(step => step !== null).map(step => typeof step === "object" ? (step.label || "") : String(step)), buildLog]
+          evolution: evolution.filter(step => step !== null)
         }),
         signal: controller.signal,
       });
@@ -869,7 +896,7 @@ export default function Home() {
           <IntentCanvas 
             onStartBuild={handleStartBuild} 
             language={currentLanguage}
-            setLanguage={setCurrentLanguage}
+            setLanguage={handleLanguageChange}
             strings={strings}
             user={user}
             userOrders={userOrders}

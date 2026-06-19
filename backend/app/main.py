@@ -747,8 +747,15 @@ async def login_user(req: LoginRequest):
         create_user(email, req.name or "Guest User", req.password)
         user = get_user(email)
         api_logger.info("New user registered: %s", email)
-    elif not verify_password(req.password, user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    else:
+        # User exists. If it's a signup attempt (name provided), notify them.
+        if req.name:
+            raise HTTPException(
+                status_code=400,
+                detail="This email is already registered. Please log in instead.",
+            )
+        if not verify_password(req.password, user["password"]):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
 
     return {
         "status": "ok",

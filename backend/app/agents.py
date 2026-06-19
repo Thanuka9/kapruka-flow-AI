@@ -417,7 +417,7 @@ async def _run_shopping_agent(
         all_products = _dedupe_products(product_lists)
 
     # Broaden the search when results are thin so carts always have real choice.
-    if len(all_products) < 10:
+    if len(all_products) == 0:
         extra_terms = list(broaden_terms or [])
         if queries:
             extra_terms.append(queries[0])

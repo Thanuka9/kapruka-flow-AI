@@ -84,18 +84,38 @@ export default function IntentCanvas({
       startSimulatedVoice();
       return;
     }
+    
+    let receivedResult = false;
     const r = new SpeechRecognition();
     r.lang = language;
     r.interimResults = false;
+    
+    const timeoutId = setTimeout(() => {
+      if (!receivedResult) {
+        console.log("Speech recognition silence timeout, falling back to simulation.");
+        try { r.abort(); } catch (e) {}
+        setListening(false);
+        startSimulatedVoice();
+      }
+    }, 6000);
+
     r.onstart = () => setListening(true);
     r.onresult = (ev) => {
+      receivedResult = true;
+      clearTimeout(timeoutId);
       const t = ev.results[0][0].transcript;
       setText((prev) => (prev ? prev + " " + t : t));
     };
-    r.onend = () => setListening(false);
-    r.onerror = () => {
+    r.onend = () => {
+      clearTimeout(timeoutId);
       setListening(false);
-      startSimulatedVoice();
+    };
+    r.onerror = () => {
+      clearTimeout(timeoutId);
+      setListening(false);
+      if (!receivedResult) {
+        startSimulatedVoice();
+      }
     };
     recogRef.current = r;
     r.start();
@@ -103,7 +123,7 @@ export default function IntentCanvas({
 
   function stopVoice() {
     if (typingTimerRef.current) clearInterval(typingTimerRef.current);
-    recogRef.current?.stop();
+    try { recogRef.current?.abort(); } catch (e) {}
     setListening(false);
     recogRef.current = null;
   }

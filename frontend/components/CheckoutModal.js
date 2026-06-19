@@ -24,6 +24,8 @@ export default function CheckoutModal({
   const [date, setDate] = useState("");
   const [instructions, setInstructions] = useState("");
   const [giftMessage, setGiftMessage] = useState(defaultGiftMessage || "");
+  const [paymentMethod, setPaymentMethod] = useState("Credit or Debit Card");
+  const [timeSlot, setTimeSlot] = useState("Anytime (9 AM - 6 PM)");
   const [loading, setLoading] = useState(false);
   const [generatingCheckout, setGeneratingCheckout] = useState(false);
   const [orderResult, setOrderResult] = useState(null);
@@ -164,6 +166,12 @@ export default function CheckoutModal({
     const started = Date.now();
     const effectiveEmail = email || (guestEmail.trim() || undefined);
 
+    const combinedInstructions = [
+      instructions ? `Instructions: ${instructions}` : "",
+      `Payment Method: ${paymentMethod}`,
+      `Delivery Slot: ${timeSlot}`
+    ].filter(Boolean).join(" | ");
+
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
@@ -177,7 +185,7 @@ export default function CheckoutModal({
           delivery_address: address,
           delivery_city: city,
           delivery_date: date,
-          delivery_instructions: instructions,
+          delivery_instructions: combinedInstructions,
           gift_message: giftMessage,
           email: effectiveEmail
         })
@@ -466,6 +474,35 @@ export default function CheckoutModal({
                     placeholder="e.g. Deliver before 5 PM"
                     className="w-full p-3 text-sm input-premium"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">Preferred Time Slot</label>
+                    <select
+                      value={timeSlot}
+                      onChange={(e) => setTimeSlot(e.target.value)}
+                      className="w-full p-3 text-sm input-premium bg-[#1f173b] cursor-pointer"
+                    >
+                      <option value="Anytime (9 AM - 6 PM)">Anytime (9 AM - 6 PM)</option>
+                      <option value="Morning (8 AM - 12 PM)">Morning (8 AM - 12 PM)</option>
+                      <option value="Afternoon (12 PM - 4 PM)">Afternoon (12 PM - 4 PM)</option>
+                      <option value="Evening (4 PM - 8 PM)">Evening (4 PM - 8 PM)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">Payment Method</label>
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-full p-3 text-sm input-premium bg-[#1f173b] cursor-pointer"
+                    >
+                      <option value="Credit or Debit Card">Credit or Debit Card</option>
+                      <option value="Mobile Wallet (Genie/Frimi)">Mobile Wallet (Genie/Frimi)</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Cash on Delivery">Cash on Delivery</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>

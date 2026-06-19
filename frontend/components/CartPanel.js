@@ -310,7 +310,7 @@ export default function CartPanel({
       <div className="space-y-5 min-w-0">
         
         <AnimatePresence>
-          {planDiff && <PlanDiff diff={planDiff} strings={activeStrings} />}
+          {planDiff && <PlanDiff diff={planDiff} strings={activeStrings} activeVersion={activeVersion} />}
         </AnimatePresence>
 
         {/* Tab Switcher for Cart Versions */}
