@@ -586,7 +586,7 @@ export default function Home() {
                 (p) =>
                   p.in_stock !== false &&
                   (p.price?.amount ?? p.price ?? 0) > 0 &&
-                  !current.some((it) => it.id === p.id)
+                  !current.some((it) => String(it.id) === String(p.id))
               );
               if (added) {
                 workingVersions = {
@@ -597,6 +597,32 @@ export default function Home() {
                   ],
                 };
                 cartTouched = true;
+              } else {
+                // Suffix / name match fallback to increment quantity of existing item
+                const qLower = action.query.toLowerCase();
+                const matchingIdx = current.findIndex(
+                  (it) =>
+                    (it.name || "").toLowerCase().includes(qLower) ||
+                    qLower.includes((it.name || "").toLowerCase()) ||
+                    (it.category || "").toLowerCase().includes(qLower) ||
+                    qLower.includes((it.category || "").toLowerCase())
+                );
+                if (matchingIdx !== -1) {
+                  const targetItem = current[matchingIdx];
+                  const newQty = (targetItem.quantity || 1) + 1;
+                  const updatedItems = [...current];
+                  updatedItems[matchingIdx] = {
+                    ...targetItem,
+                    quantity: newQty,
+                    reason: `Increased quantity via chat: ${action.query}`
+                  };
+                  workingVersions = {
+                    ...workingVersions,
+                    [workingActive]: updatedItems
+                  };
+                  cartTouched = true;
+                  added = { name: `${targetItem.name} (qty: ${newQty})` };
+                }
               }
             }
           } catch (e) {
@@ -735,12 +761,19 @@ export default function Home() {
       })
     }).catch(() => {});
 
+    const s = LOCALIZED_STRINGS[currentLanguage] || LOCALIZED_STRINGS["en-US"];
+    const pushAgent = (msg) =>
+      setChatMessages((prev) => [...prev, { role: "agent", text: msg }]);
+
     if (action === "make_cheaper") {
       setActiveVersion("cheaper");
+      pushAgent(s.chat_reply_cheaper);
     } else if (action === "make_premium") {
       setActiveVersion("premium");
+      pushAgent(s.chat_reply_premium);
     } else if (action === "today_delivery") {
       setActiveVersion("fast");
+      pushAgent(s.chat_reply_fast);
     } else if (action === "gift_mode") {
       setCheckoutOpen(true);
     } else if (action === "surprise") {
@@ -882,6 +915,8 @@ export default function Home() {
         onLogoClick={handleGoHome}
         onCartClick={handleCartClick}
         cartCount={items.length}
+        showNewFlow={pageState === "cart" || pageState === "workspace" || items.length > 0}
+        onNewFlow={handleReset}
       />
 
       {/* Main Content Area — dark premium workspace below Kapruka site header */}

@@ -417,7 +417,8 @@ async def _run_shopping_agent(
         all_products = _dedupe_products(product_lists)
 
     # Broaden the search when results are thin so carts always have real choice.
-    if len(all_products) == 0:
+    # ONLY broaden if there are actually matched categories or gift mode (broaden_terms is not empty)
+    if len(all_products) == 0 and broaden_terms:
         extra_terms = list(broaden_terms or [])
         if queries:
             extra_terms.append(queries[0])
@@ -444,23 +445,46 @@ async def _run_shopping_agent(
             {"count": len(all_products)},
         )
     elif ALLOW_FALLBACK_CATALOG:
-        print("No products retrieved from MCP. Using fallback products.")
-        emit_event(
-            events,
-            "finding",
-            "MCP returned no products — using verified fallback catalog",
-            "kapruka_search_products",
-            {"fallback": True},
-        )
+        has_valid_intent = len(broaden_terms or []) > 0
+        matching_fallbacks = []
         for fb in FALLBACK_PRODUCTS:
             matches_query = any(
                 sq.lower() in fb["name"].lower() or sq.lower() in fb["category"].lower()
                 for sq in queries
             )
-            if matches_query or not queries:
-                all_products.append(fb)
-        if not all_products:
+            if matches_query:
+                matching_fallbacks.append(fb)
+        
+        if matching_fallbacks:
+            all_products = matching_fallbacks
+            print(f"MCP returned no products. Using {len(all_products)} matching fallback products.")
+            emit_event(
+                events,
+                "finding",
+                f"Using {len(all_products)} matching fallback products",
+                "kapruka_search_products",
+                {"fallback": True},
+            )
+        elif has_valid_intent:
             all_products = FALLBACK_PRODUCTS.copy()
+            print("MCP returned no products. Using entire fallback catalog.")
+            emit_event(
+                events,
+                "finding",
+                "MCP returned no products — using verified fallback catalog",
+                "kapruka_search_products",
+                {"fallback": True},
+            )
+        else:
+            all_products = []
+            print("No matching products and no valid category intent. Returning empty results.")
+            emit_event(
+                events,
+                "finding",
+                "No matching products found for this request",
+                "kapruka_search_products",
+                {"error": True},
+            )
     else:
         emit_event(
             events,
@@ -758,15 +782,26 @@ async def execute_agent_pipeline(
     if not products and ALLOW_FALLBACK_CATALOG:
         print("Fallback Catalog Check: MCP failed completely. Using fallback catalog.")
         queries = intent.get("search_queries", [])
+        broaden_terms = list(intent.get("matched_categories", []))
+        if intent.get("gift_mode"):
+            broaden_terms.extend(["gift hamper", "chocolates"])
+        has_valid_intent = len(broaden_terms) > 0
+        
+        matching_fallbacks = []
         for fb in FALLBACK_PRODUCTS:
             matches_query = any(
                 sq.lower() in fb["name"].lower() or sq.lower() in fb["category"].lower()
                 for sq in queries
             )
-            if matches_query or not queries:
-                products.append(fb)
-        if not products:
+            if matches_query:
+                matching_fallbacks.append(fb)
+                
+        if matching_fallbacks:
+            products = matching_fallbacks
+        elif has_valid_intent:
             products = FALLBACK_PRODUCTS.copy()
+        else:
+            products = []
 
     # Cart building is pure (no MCP), so finish it even if the session tore down.
     if cart_result is None:

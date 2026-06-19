@@ -44,6 +44,8 @@ export default function KaprukaHeader({
   onLogoClick,
   onCartClick,
   cartCount,
+  showNewFlow = false,
+  onNewFlow,
 }) {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -176,6 +178,18 @@ export default function KaprukaHeader({
 
           {/* Right actions — Amazon-style stacked labels */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {showNewFlow && (
+              <button
+                type="button"
+                onClick={onNewFlow}
+                className="kapruka-nav-btn flex items-center justify-center h-11 px-3 sm:px-4 bg-gray-50 border border-gray-200 hover:border-[#D80000]/30 hover:bg-red-50 text-[#D80000] rounded-xl transition-all font-bold text-sm sm:text-base gap-1.5"
+                title={s.new_flow || "Start New Flow"}
+              >
+                <span>🔄</span>
+                <span className="hidden sm:inline">{s.new_flow || "New Flow"}</span>
+              </button>
+            )}
+
             <select
               value={currentLanguage}
               onChange={(e) => onLanguageChange(e.target.value)}

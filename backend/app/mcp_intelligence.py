@@ -76,13 +76,27 @@ RECIPIENT_WORDS = {
     "mom": "mother",
     "mum": "mother",
     "ammata": "mother",
+    "අම්මා": "mother",
+    "අම්මාට": "mother",
+    "මව": "mother",
+    "මවට": "mother",
     "thaththa": "father",
     "thaaththa": "father",
     "father": "father",
     "dad": "father",
     "appa": "father",
+    "තාත්තා": "father",
+    "තාත්තාට": "father",
+    "පියා": "father",
+    "පියාට": "father",
     "wife": "wife",
+    "බිරිඳ": "wife",
+    "බිරිඳට": "wife",
     "husband": "husband",
+    "මහත්මයා": "husband",
+    "මහත්මයාට": "husband",
+    "සැමියා": "husband",
+    "සැමියාට": "husband",
     "girlfriend": "partner",
     "boyfriend": "partner",
     "partner": "partner",
@@ -90,9 +104,17 @@ RECIPIENT_WORDS = {
     "sister": "sister",
     "nangi": "sister",
     "akka": "sister",
+    "නංගි": "sister",
+    "නංගිට": "sister",
+    "අක්කා": "sister",
+    "අක්කාට": "sister",
     "brother": "brother",
     "malli": "brother",
     "aiya": "brother",
+    "මල්ලි": "brother",
+    "මල්ලිට": "brother",
+    "අයියා": "brother",
+    "අයියාට": "brother",
     "boss": "colleague",
     "team": "team",
     "office": "team",
@@ -100,8 +122,17 @@ RECIPIENT_WORDS = {
     "friend": "friend",
     "yaaluwa": "friend",
     "machan": "friend",
+    "මිතුරා": "friend",
+    "මිතුරාට": "friend",
+    "යහළුවා": "friend",
+    "යාලුවා": "friend",
     "daughter": "child",
     "son": "child",
+    "දුව": "child",
+    "දුවට": "child",
+    "පුතා": "child",
+    "පුතාට": "child",
+    "ළමයා": "child",
     "baby": "baby",
     "kid": "child",
     "child": "child",
@@ -111,27 +142,41 @@ OCCASION_WORDS = {
     "birthday": "birthday",
     "bday": "birthday",
     "upan dinaya": "birthday",
+    "උපන්දිනය": "birthday",
+    "උපන්දිනයට": "birthday",
+    "උපන්දින": "birthday",
     "anniversary": "anniversary",
+    "සංවත්සරය": "anniversary",
+    "සංවත්සරයට": "anniversary",
     "wedding": "wedding",
     "engagement": "wedding",
+    "විවාහ": "wedding",
+    "මංගල්‍යය": "wedding",
     "graduation": "graduation",
     "graduated": "graduation",
     "graduate": "graduation",
+    "උපාධි": "graduation",
     "valentine": "valentine",
     "valentines": "valentine",
     "new year": "new_year",
     "newyear": "new_year",
     "avurudu": "new_year",
     "aluth avurudu": "new_year",
+    "අලුත් අවුරුද්ද": "new_year",
+    "අවුරුද්දට": "new_year",
     "christmas": "christmas",
     "xmas": "christmas",
     "nattal": "christmas",
+    "නත්තල": "christmas",
+    "නත්තලට": "christmas",
     "get well": "get_well",
     "recovery": "get_well",
     "congrats": "congratulations",
     "congratulations": "congratulations",
+    "සුභ පැතුම්": "congratulations",
     "thank you": "thank_you",
     "thanks": "thank_you",
+    "ස්තූතියි": "thank_you",
 }
 
 TODAY_WORDS = [
@@ -377,6 +422,13 @@ _UNIT_AFTER = (
 def _extract_budget(text: str, user_profile: Optional[Dict] = None) -> Optional[float]:
     """Extract an LKR budget. Returns None when the user gave no budget signal."""
     raw = text.lower().replace(",", "")
+    # Normalize Sinhala budget words
+    raw = raw.replace("රුපියල්", "rs")
+    raw = raw.replace("රු.", "rs")
+    raw = raw.replace("රු", "rs")
+    raw = raw.replace("rupiyal", "rs")
+    # Clean Sinhala and Tanglish suffixes from numbers (e.g. 5000ක්, 5000කට, 5000ට, 5000ක)
+    raw = re.sub(r'(\d+)(?:ක්|කට|ට|ක|ak|ata|ka)\b', r'\1 ', raw)
 
     # 1) lakh / lac (×100,000)
     m = re.search(r"(\d+(?:\.\d+)?)\s*(?:lakh|lac|laksha)", raw)
@@ -534,6 +586,8 @@ def build_search_queries(
     gift_mode: bool = False,
     matched_categories: Optional[List[str]] = None,
     keywords: Optional[List[str]] = None,
+    occasion: Optional[str] = None,
+    recipient: Optional[str] = None,
 ) -> List[str]:
     """Generate MCP-friendly English search queries from multilingual intent."""
     queries: List[str] = []
@@ -543,6 +597,23 @@ def build_search_queries(
         else _matched_categories(text)
     )
     keywords = keywords if keywords is not None else _extract_keywords(text)
+
+    # Occasion/recipient query expansion to get high quality English results
+    if occasion == "birthday":
+        if "cake" in matched_categories:
+            queries.append("birthday cake")
+        if "flowers" in matched_categories:
+            queries.append("birthday flowers")
+        if "gifts" in matched_categories:
+            queries.append("birthday gift")
+    
+    if gift_mode:
+        if recipient == "mother":
+            queries.append("gifts for mother")
+            queries.append("mother's day")
+        elif recipient == "father":
+            queries.append("gifts for father")
+            queries.append("father's day")
 
     if category_hint:
         queries.append(category_hint)
@@ -599,7 +670,7 @@ def parse_intent_mcp(
             matched_categories.insert(0, hint_cat)
     keywords = _extract_keywords(text)
     queries = build_search_queries(
-        text, category_hint, user_profile, gift_mode, matched_categories, keywords
+        text, category_hint, user_profile, gift_mode, matched_categories, keywords, occasion, recipient
     )
 
     budget_inferred = budget is None
@@ -703,6 +774,39 @@ def relevance_score(product: Dict, intent: Dict) -> float:
         for k in ["gift", "flower", "chocolate", "cake", "hamper", "perfume", "jewel"]
     ):
         score += 2.0
+
+    # 3b) Recipient alignment boost & penalty
+    recipient = intent.get("recipient")
+    if recipient:
+        name_lower = name.lower()
+        if recipient == "mother":
+            if any(w in name_lower for w in ["mother", "mom", "women", "her", "she", "amma"]):
+                score += 4.0
+            if any(w in name_lower for w in ["father", "dad", "men", "him", "he", "thaththa", "brother", "husband", "son"]):
+                score -= 6.0
+        elif recipient == "father":
+            if any(w in name_lower for w in ["father", "dad", "men", "him", "he", "thaththa"]):
+                score += 4.0
+            if any(w in name_lower for w in ["mother", "mom", "women", "her", "she", "amma", "sister", "wife", "daughter"]):
+                score -= 6.0
+        elif recipient in ["wife", "partner"]:
+            if any(w in name_lower for w in ["wife", "her", "she", "women", "love", "romantic"]):
+                score += 3.0
+            if any(w in name_lower for w in ["husband", "men", "him", "he"]):
+                score -= 5.0
+        elif recipient == "husband":
+            if any(w in name_lower for w in ["husband", "him", "he", "men", "love", "romantic"]):
+                score += 3.0
+            if any(w in name_lower for w in ["wife", "she", "her", "women"]):
+                score -= 5.0
+
+    # 3c) Occasion specific boost
+    occasion = intent.get("occasion")
+    if occasion:
+        name_lower = name.lower()
+        if occasion == "birthday":
+            if any(w in name_lower for w in ["birthday", "bday", "cupcake"]):
+                score += 3.0
 
     # 4) Profile preferences (order history categories).
     for pref in intent.get("_profile_categories") or []:

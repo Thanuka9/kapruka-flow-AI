@@ -24,11 +24,20 @@ export default function IntentCanvas({
   const suggestions = getQuickSuggestions(language);
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
+  const [isVoiceSupported, setIsVoiceSupported] = useState(false);
   const recogRef = useRef(null);
   const typingTimerRef = useRef(null);
   const inputRef = useRef(null);
 
   const mcpBadge = getMcpStatusPresentation(mcpStatus, strings);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      setIsVoiceSupported(!!SpeechRecognition);
+    }
+  }, []);
+
 
   useEffect(() => {
     const t = setTimeout(() => inputRef.current?.focus(), 80);
@@ -199,14 +208,16 @@ export default function IntentCanvas({
                 <option value="si-LK">{s.lang_sinhala || "සිංහල"}</option>
                 <option value="en-LK">{s.lang_tanglish || "Tanglish"}</option>
               </select>
-              <button
-                type="button"
-                onClick={() => (listening ? stopVoice() : startVoice())}
-                className={`btn-tertiary min-h-[36px] text-sm gap-1.5 px-3 ${listening ? "bg-kapruka-gold/15 border border-kapruka-gold/30" : ""}`}
-              >
-                <span>{listening ? "■" : "🎤"}</span>
-                {listening ? s.listening : s.voice_intent}
-              </button>
+              {isVoiceSupported && (
+                <button
+                  type="button"
+                  onClick={() => (listening ? stopVoice() : startVoice())}
+                  className={`btn-tertiary min-h-[36px] text-sm gap-1.5 px-3 ${listening ? "bg-kapruka-gold/15 border border-kapruka-gold/30" : ""}`}
+                >
+                  <span>{listening ? "■" : "🎤"}</span>
+                  {listening ? s.listening : s.voice_intent}
+                </button>
+              )}
             </div>
 
             <input

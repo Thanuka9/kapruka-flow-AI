@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
 
 export function computePlanDiff(previousItems = [], nextItems = []) {
-  const prevIds = new Set(previousItems.map((item) => item.id));
-  const nextIds = new Set(nextItems.map((item) => item.id));
+  const prevIds = new Set(previousItems.map((item) => String(item.id)));
+  const nextIds = new Set(nextItems.map((item) => String(item.id)));
 
-  const added = nextItems.filter((item) => !prevIds.has(item.id));
-  const removed = previousItems.filter((item) => !nextIds.has(item.id));
-  const kept = nextItems.filter((item) => prevIds.has(item.id));
+  const added = nextItems.filter((item) => !prevIds.has(String(item.id)));
+  const removed = previousItems.filter((item) => !nextIds.has(String(item.id)));
+  const kept = nextItems.filter((item) => prevIds.has(String(item.id)));
 
   return { added, removed, kept };
 }

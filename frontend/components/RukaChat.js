@@ -43,12 +43,37 @@ export default function RukaChat({
     [profile, language, strings]
   );
 
+  const categoriesInCart = new Set(
+    (metadata.intent_parsed?.matched_categories || [])
+      .map((c) => String(c).toLowerCase().trim())
+  );
+  
+  const showChoc = !categoriesInCart.has("chocolate");
+  const showFlowers = !categoriesInCart.has("flowers");
+  const showCake = !categoriesInCart.has("cake");
+  
+  let dynamicAddLabel = strings.qr_add_choc || "Add chocolates";
+  let dynamicAddText = "add chocolates";
+  
+  if (!showChoc) {
+    if (showFlowers) {
+      dynamicAddLabel = strings.qr_add_flowers || "Add flowers";
+      dynamicAddText = "add flowers";
+    } else if (showCake) {
+      dynamicAddLabel = strings.qr_add_cake || "Add cake";
+      dynamicAddText = "add cake";
+    } else {
+      dynamicAddLabel = strings.qr_add_groceries || "Add groceries";
+      dynamicAddText = "add groceries";
+    }
+  }
+
   const quickReplies = [
     ...profileReplies,
     { label: strings.make_cheaper || "Make cheaper", text: "make it cheaper" },
     { label: strings.upgrade_premium || "Go premium", text: "upgrade to premium" },
     { label: strings.today_delivery || "Deliver today", text: "deliver today" },
-    { label: strings.qr_add_choc || "Add chocolates", text: "add chocolates" },
+    { label: dynamicAddLabel, text: dynamicAddText },
   ].slice(0, 6);
 
   const pills = [];

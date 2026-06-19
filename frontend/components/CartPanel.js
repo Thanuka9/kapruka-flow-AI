@@ -99,7 +99,7 @@ export default function CartPanel({
     const nextItems = cartVersions[activeVersion] ?? [];
     if (previousVersionRef.current !== activeVersion) {
       setPlanDiff(computePlanDiff(prevItems, nextItems));
-      const timer = setTimeout(() => setPlanDiff(null), 5000);
+      const timer = setTimeout(() => setPlanDiff(null), 8000);
       previousVersionRef.current = activeVersion;
       previousItemsRef.current = nextItems;
       return () => clearTimeout(timer);
