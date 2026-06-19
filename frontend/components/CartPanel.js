@@ -26,12 +26,12 @@ export default function CartPanel({
   onRollback,
   sessionId,
   strings,
-  demoCompact = false,
   onReset,
   catalogProducts = [],
   clientProfile = null,
   language = "en-US",
 }) {
+  const demoCompact = false;
   const items = cartVersions[activeVersion] ?? [];
   const budgetLimit = metadata.budget_limit ?? 25000.0;
   const deliveryFee = metadata.delivery_fee ?? 300.0;
@@ -367,11 +367,9 @@ export default function CartPanel({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -24 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
-                className={`grid grid-cols-1 md:grid-cols-2 gap-3 items-start cart-stagger ${
-                  demoCompact ? "max-h-[min(48vh,480px)] overflow-y-auto overscroll-contain pr-1 scrollbar-thin" : ""
-                }`}
+                className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start cart-stagger"
               >
-                {items.slice(0, demoCompact ? 4 : undefined).map((item) => (
+                {items.map((item) => (
                   <ProductCard
                     key={item.id}
                     product={item}

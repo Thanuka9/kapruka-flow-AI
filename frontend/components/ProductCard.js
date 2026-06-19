@@ -167,7 +167,7 @@ export default function ProductCard({
         {product.reason && !compact && (
           <div className="p-3 rounded-xl bg-flow-bg-secondary border border-flow-border mb-3">
             <span className="text-label block mb-1">{activeStrings.curation_note}</span>
-            <p className="text-sm text-flow-secondary leading-relaxed line-clamp-2">{product.reason}</p>
+            <p className="text-sm text-flow-secondary leading-relaxed">{product.reason}</p>
           </div>
         )}
       </div>

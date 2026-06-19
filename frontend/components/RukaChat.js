@@ -126,11 +126,11 @@ export default function RukaChat({
         )}
 
         {prompt && !pills.length && (
-          <p className="text-sm text-slate-300 leading-relaxed line-clamp-2">{prompt}</p>
+          <p className="text-sm text-slate-300 leading-relaxed">{prompt}</p>
         )}
 
         {lastAgent && !insightsOnly && (
-          <p className="text-sm text-slate-400 leading-relaxed line-clamp-3 border-t border-white/10 pt-3">
+          <p className="text-sm text-slate-400 leading-relaxed border-t border-white/10 pt-3">
             {lastAgent.text}
           </p>
         )}

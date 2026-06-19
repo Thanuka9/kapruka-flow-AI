@@ -832,7 +832,7 @@ export default function Home() {
   const strings = LOCALIZED_STRINGS[currentLanguage] || LOCALIZED_STRINGS["en-US"];
 
   return (
-    <div className={`min-h-screen text-flow-text bg-flow-bg flex flex-col justify-between relative animate-fadeInOpacity ${demoRan && pageState !== "input" ? "demo-stage" : ""}`}>
+    <div className="min-h-screen text-flow-text bg-flow-bg flex flex-col justify-between relative animate-fadeInOpacity">
       <div className="app-bg" aria-hidden="true" />
       <Head>
         <title>Kapruka Flow — AI Shopping Experience</title>
@@ -927,7 +927,6 @@ export default function Home() {
             onRollback={handleRollback}
             sessionId={sessionId}
             strings={strings}
-            demoCompact={demoRan}
             onReset={handleReset}
             catalogProducts={
               catalogCache.length > 0
@@ -990,8 +989,8 @@ export default function Home() {
         strings={strings}
       />
 
-      {/* Branded Footer — hidden during judge demo to avoid scroll */}
-      <footer className={`w-full px-6 py-10 bg-white border-t border-flow-border text-flow-secondary relative z-20 text-base ${demoRan && pageState !== "input" ? "hidden" : ""}`}>
+      {/* Branded Footer */}
+      <footer className="w-full px-6 py-10 bg-white border-t border-flow-border text-flow-secondary relative z-20 text-base">
         <div className="max-w-flow mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-flow-muted">
             © {new Date().getFullYear()} Kapruka Holdings PLC. Kapruka Agent Challenge 2026.
