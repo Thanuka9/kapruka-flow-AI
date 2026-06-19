@@ -63,75 +63,32 @@ export default function IntentCanvas({
     requestAnimationFrame(() => inputRef.current?.focus());
   }
 
-  function startSimulatedVoice() {
-    if (typingTimerRef.current) clearInterval(typingTimerRef.current);
-    let sampleText = "I need a birthday cake and chocolates under 10000 LKR for tomorrow";
-    if (language === "si-LK") {
-      sampleText = "මට හෙටට රුපියල් 8000කට අඩුවෙන් ලස්සන මල් කළඹක් සහ චොකලට් ඕනෑ";
-    } else if (language === "en-LK") {
-      sampleText = "Mata cake ekakui chocolates tikakui Colombo deliver karanna heta udeta";
-    }
-    setListening(true);
-    setText("");
-    let currentIndex = 0;
-    typingTimerRef.current = setInterval(() => {
-      if (currentIndex < sampleText.length) {
-        setText(sampleText.substring(0, currentIndex + 1));
-        currentIndex++;
-      } else {
-        clearInterval(typingTimerRef.current);
-        typingTimerRef.current = null;
-        setListening(false);
-        setTimeout(() => onStartBuild(sampleText, language), 600);
-      }
-    }, 50);
-  }
-
   function startVoice() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      startSimulatedVoice();
-      return;
-    }
+    if (!SpeechRecognition) return;
     
-    let receivedResult = false;
     const r = new SpeechRecognition();
-    r.lang = language;
+    // Use proper Sinhala language code for Sinhala/Tanglish modes to ensure accurate recognition
+    r.lang = language === "en-LK" ? "si-LK" : language;
     r.interimResults = false;
     
-    const timeoutId = setTimeout(() => {
-      if (!receivedResult) {
-        console.log("Speech recognition silence timeout, falling back to simulation.");
-        try { r.abort(); } catch (e) {}
-        setListening(false);
-        startSimulatedVoice();
-      }
-    }, 6000);
-
     r.onstart = () => setListening(true);
     r.onresult = (ev) => {
-      receivedResult = true;
-      clearTimeout(timeoutId);
       const t = ev.results[0][0].transcript;
       setText((prev) => (prev ? prev + " " + t : t));
     };
     r.onend = () => {
-      clearTimeout(timeoutId);
       setListening(false);
     };
-    r.onerror = () => {
-      clearTimeout(timeoutId);
+    r.onerror = (ev) => {
+      console.error("Speech recognition error:", ev.error);
       setListening(false);
-      if (!receivedResult) {
-        startSimulatedVoice();
-      }
     };
     recogRef.current = r;
     r.start();
   }
 
   function stopVoice() {
-    if (typingTimerRef.current) clearInterval(typingTimerRef.current);
     try { recogRef.current?.abort(); } catch (e) {}
     setListening(false);
     recogRef.current = null;
