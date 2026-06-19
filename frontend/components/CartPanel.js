@@ -120,7 +120,7 @@ export default function CartPanel({
     return sum + (priceAmount * qty);
   }, 0);
   
-  const total = subtotal + deliveryFee;
+  const total = subtotal > 0 ? subtotal + deliveryFee : 0;
   const budgetRatio = budgetLimit > 0 ? (total / budgetLimit) * 100 : 0;
   const isOverBudget = total > budgetLimit;
 
@@ -273,16 +273,16 @@ export default function CartPanel({
 
   // Handle item actions
   const handleRemoveItem = (itemId) => {
-    const updated = items.filter(it => it.id !== itemId);
+    const updated = items.filter(it => String(it.id) !== String(itemId));
     onUpdateCartItems(activeVersion, updated);
   };
 
   const handleReplaceItem = (oldItemId, newProduct) => {
-    const oldItem = items.find(it => it.id === oldItemId);
+    const oldItem = items.find(it => String(it.id) === String(oldItemId));
     const qty = oldItem ? (oldItem.quantity ?? 1) : 1;
     
     const updated = items.map(it => {
-      if (it.id === oldItemId) {
+      if (String(it.id) === String(oldItemId)) {
         return {
           ...newProduct,
           quantity: qty,
@@ -295,7 +295,7 @@ export default function CartPanel({
   };
 
   const handleAddItem = (newProduct) => {
-    if (items.some(it => it.id === newProduct.id)) return;
+    if (items.some(it => String(it.id) === String(newProduct.id))) return;
     const updated = [...items, { ...newProduct, quantity: 1, reason: "Added by user" }];
     onUpdateCartItems(activeVersion, updated);
   };
@@ -494,34 +494,45 @@ export default function CartPanel({
 
         {/* Crate Evolution Timeline */}
         {!demoCompact && evolution.length > 0 && (
-          <div className="flow-card p-6 space-y-4">
-            <h3 className="text-base font-bold text-flow-text whitespace-nowrap inline-flex items-center gap-2">
-              <Icon3D name="bolt" size={16} tilt />
-              {activeStrings.crate_evolution_timeline}
-            </h3>
-            <div className="space-y-3 relative pl-4 border-l border-flow-border max-h-52 overflow-y-auto">
-              {evolution.map((step, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => onRollback && onRollback(idx)}
-                  className="relative group cursor-pointer hover:bg-flow-bg-secondary p-3 rounded-xl transition-all"
-                  title="Click to rollback to this snapshot"
-                >
-                  {/* Stepper Dot */}
-                  <div className="absolute -left-[20.5px] top-3 w-2.5 h-2.5 rounded-full border-2 border-kapruka-red bg-white group-hover:bg-kapruka-red transition-all"></div>
-                  
-                  <div className="text-label group-hover:text-kapruka-red">
-                    Step {idx + 1}
-                  </div>
-                  <div className="text-base text-flow-text leading-snug">
-                    {(step && step.label) || step || "Crate Curation Updated"}
-                  </div>
-                </div>
-              ))}
+          <div className="flow-card p-6 space-y-3 border-l-4 border-kapruka-gold">
+            <div>
+              <h3 className="text-base font-bold text-flow-text whitespace-nowrap inline-flex items-center gap-2">
+                <Icon3D name="bolt" size={16} tilt />
+                {activeStrings.crate_evolution_timeline}
+              </h3>
+              <p className="text-xs text-flow-muted mt-1 leading-relaxed">
+                {activeStrings.rollback_note || "* Click any past step to rollback selections and settings to that snapshot."}
+              </p>
             </div>
-            <p className="text-base text-flow-muted mt-2 leading-relaxed">
-              {activeStrings.rollback_note}
-            </p>
+            <div className="space-y-3 relative pl-4 border-l border-flow-border max-h-52 overflow-y-auto">
+              {evolution.map((step, idx) => {
+                const isActiveStep = idx === evolution.length - 1;
+                return (
+                  <div 
+                    key={idx} 
+                    onClick={() => onRollback && onRollback(idx)}
+                    className={`relative group cursor-pointer hover:bg-flow-bg-secondary p-3 rounded-xl transition-all ${
+                      isActiveStep ? "bg-flow-bg-secondary/40 border border-flow-border/50" : ""
+                    }`}
+                    title="Click to rollback to this snapshot"
+                  >
+                    {/* Stepper Dot */}
+                    <div className={`absolute -left-[20.5px] top-4 w-2.5 h-2.5 rounded-full border-2 transition-all ${
+                      isActiveStep 
+                        ? "border-kapruka-gold bg-kapruka-gold shadow-[0_0_8px_var(--kapruka-gold)] scale-110" 
+                        : "border-kapruka-red bg-white group-hover:bg-kapruka-red"
+                    }`}></div>
+                    
+                    <div className={`text-label ${isActiveStep ? "text-kapruka-gold font-bold" : "group-hover:text-kapruka-red"}`}>
+                      Step {idx + 1} {isActiveStep && " (Current)"}
+                    </div>
+                    <div className={`text-base leading-snug ${isActiveStep ? "text-flow-text font-semibold" : "text-flow-text"}`}>
+                      {(step && step.label) || step || "Crate Curation Updated"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -568,7 +579,7 @@ export default function CartPanel({
             </div>
             <div className="flex justify-between text-base text-flow-muted">
               <span>{formatCurrency(total)} spent</span>
-              <span>Limit {formatCurrency(budgetLimit)}</span>
+              <span>Limit {formatCurrency(sliderBudget)}</span>
             </div>
           </div>
 
@@ -628,7 +639,7 @@ export default function CartPanel({
           <button
             type="button"
             onClick={onCheckout}
-            disabled={outOfStockItems.length > 0}
+            disabled={items.length === 0 || outOfStockItems.length > 0}
             className="btn-primary btn-primary-lg w-full checkout-pulse-once disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {activeStrings.proceed_to_checkout}

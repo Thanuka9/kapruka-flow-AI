@@ -430,14 +430,14 @@ export default function Home() {
     const oldItems = cartVersions[version] ?? [];
     let changeLog = "";
     if (updatedItems.length < oldItems.length) {
-      const removed = oldItems.find(o => !updatedItems.some(u => u.id === o.id));
+      const removed = oldItems.find(o => !updatedItems.some(u => String(u.id) === String(o.id)));
       changeLog = removed ? `Removed '${removed.name}' from ${version} plan.` : `Removed item from ${version} plan.`;
     } else if (updatedItems.length > oldItems.length) {
-      const added = updatedItems.find(u => !oldItems.some(o => o.id === u.id));
+      const added = updatedItems.find(u => !oldItems.some(o => String(o.id) === String(u.id)));
       changeLog = added ? `Added '${added.name}' to ${version} plan.` : `Added item to ${version} plan.`;
     } else {
-      const replacedOld = oldItems.find(o => updatedItems.some(u => u.id !== o.id && u.reason.includes("Replaced")));
-      const replacedNew = updatedItems.find(u => oldItems.some(o => o.id !== u.id && u.reason.includes("Replaced")));
+      const replacedOld = oldItems.find(o => updatedItems.some(u => String(u.id) !== String(o.id) && u.reason && u.reason.includes("Replaced")));
+      const replacedNew = updatedItems.find(u => oldItems.some(o => String(o.id) !== String(u.id) && u.reason && u.reason.includes("Replaced")));
       if (replacedOld && replacedNew) {
         changeLog = `Replaced '${replacedOld.name}' with '${replacedNew.name}' in ${version} plan.`;
       } else {

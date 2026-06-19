@@ -47,7 +47,7 @@ class Settings:
 
         # Kapruka MCP
         self.mcp_url: str = os.getenv("MCP_URL", "https://mcp.kapruka.com/mcp")
-        self.mcp_timeout: float = _as_float(os.getenv("MCP_TIMEOUT"), 30.0)
+        self.mcp_timeout: float = _as_float(os.getenv("MCP_TIMEOUT"), 8.0)
         self.mcp_max_retries: int = _as_int(os.getenv("MCP_MAX_RETRIES"), 2)
         self.mcp_retry_backoff: float = _as_float(os.getenv("MCP_RETRY_BACKOFF"), 0.75)
 
@@ -56,7 +56,7 @@ class Settings:
             os.getenv("ALLOW_SIMULATED_CHECKOUT"), False
         )
         self.allow_fallback_catalog: bool = _as_bool(
-            os.getenv("ALLOW_FALLBACK_CATALOG"), False
+            os.getenv("ALLOW_FALLBACK_CATALOG"), True
         )
 
         # Persistence
