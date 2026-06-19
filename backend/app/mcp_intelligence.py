@@ -428,7 +428,7 @@ def _extract_budget(text: str, user_profile: Optional[Dict] = None) -> Optional[
     raw = raw.replace("රු", "rs")
     raw = raw.replace("rupiyal", "rs")
     # Clean Sinhala and Tanglish suffixes from numbers (e.g. 5000ක්, 5000කට, 5000ට, 5000ක)
-    raw = re.sub(r'(\d+)(?:ක්|කට|ට|ක|ak|ata|ka)\b', r'\1 ', raw)
+    raw = re.sub(r"(\d+)(?:ක්|කට|ට|ක|ak|ata|ka)\b", r"\1 ", raw)
 
     # 1) lakh / lac (×100,000)
     m = re.search(r"(\d+(?:\.\d+)?)\s*(?:lakh|lac|laksha)", raw)
@@ -606,7 +606,7 @@ def build_search_queries(
             queries.append("birthday flowers")
         if "gifts" in matched_categories:
             queries.append("birthday gift")
-    
+
     if gift_mode:
         if recipient == "mother":
             queries.append("gifts for mother")
@@ -670,7 +670,14 @@ def parse_intent_mcp(
             matched_categories.insert(0, hint_cat)
     keywords = _extract_keywords(text)
     queries = build_search_queries(
-        text, category_hint, user_profile, gift_mode, matched_categories, keywords, occasion, recipient
+        text,
+        category_hint,
+        user_profile,
+        gift_mode,
+        matched_categories,
+        keywords,
+        occasion,
+        recipient,
     )
 
     budget_inferred = budget is None
@@ -780,22 +787,60 @@ def relevance_score(product: Dict, intent: Dict) -> float:
     if recipient:
         name_lower = name.lower()
         if recipient == "mother":
-            if any(w in name_lower for w in ["mother", "mom", "women", "her", "she", "amma"]):
+            if any(
+                w in name_lower
+                for w in ["mother", "mom", "women", "her", "she", "amma"]
+            ):
                 score += 4.0
-            if any(w in name_lower for w in ["father", "dad", "men", "him", "he", "thaththa", "brother", "husband", "son"]):
+            if any(
+                w in name_lower
+                for w in [
+                    "father",
+                    "dad",
+                    "men",
+                    "him",
+                    "he",
+                    "thaththa",
+                    "brother",
+                    "husband",
+                    "son",
+                ]
+            ):
                 score -= 6.0
         elif recipient == "father":
-            if any(w in name_lower for w in ["father", "dad", "men", "him", "he", "thaththa"]):
+            if any(
+                w in name_lower
+                for w in ["father", "dad", "men", "him", "he", "thaththa"]
+            ):
                 score += 4.0
-            if any(w in name_lower for w in ["mother", "mom", "women", "her", "she", "amma", "sister", "wife", "daughter"]):
+            if any(
+                w in name_lower
+                for w in [
+                    "mother",
+                    "mom",
+                    "women",
+                    "her",
+                    "she",
+                    "amma",
+                    "sister",
+                    "wife",
+                    "daughter",
+                ]
+            ):
                 score -= 6.0
         elif recipient in ["wife", "partner"]:
-            if any(w in name_lower for w in ["wife", "her", "she", "women", "love", "romantic"]):
+            if any(
+                w in name_lower
+                for w in ["wife", "her", "she", "women", "love", "romantic"]
+            ):
                 score += 3.0
             if any(w in name_lower for w in ["husband", "men", "him", "he"]):
                 score -= 5.0
         elif recipient == "husband":
-            if any(w in name_lower for w in ["husband", "him", "he", "men", "love", "romantic"]):
+            if any(
+                w in name_lower
+                for w in ["husband", "him", "he", "men", "love", "romantic"]
+            ):
                 score += 3.0
             if any(w in name_lower for w in ["wife", "she", "her", "women"]):
                 score -= 5.0

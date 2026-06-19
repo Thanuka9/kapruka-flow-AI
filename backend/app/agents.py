@@ -11,7 +11,6 @@ from .logging_config import get_logger
 from .mcp_client import (
     mcp_session,
     call_tool,
-    call_mcp_tool_safe,
     parse_json_response,
     emit_event,
 )
@@ -454,10 +453,12 @@ async def _run_shopping_agent(
             )
             if matches_query:
                 matching_fallbacks.append(fb)
-        
+
         if matching_fallbacks:
             all_products = matching_fallbacks
-            print(f"MCP returned no products. Using {len(all_products)} matching fallback products.")
+            print(
+                f"MCP returned no products. Using {len(all_products)} matching fallback products."
+            )
             emit_event(
                 events,
                 "finding",
@@ -477,7 +478,9 @@ async def _run_shopping_agent(
             )
         else:
             all_products = []
-            print("No matching products and no valid category intent. Returning empty results.")
+            print(
+                "No matching products and no valid category intent. Returning empty results."
+            )
             emit_event(
                 events,
                 "finding",
@@ -786,7 +789,7 @@ async def execute_agent_pipeline(
         if intent.get("gift_mode"):
             broaden_terms.extend(["gift hamper", "chocolates"])
         has_valid_intent = len(broaden_terms) > 0
-        
+
         matching_fallbacks = []
         for fb in FALLBACK_PRODUCTS:
             matches_query = any(
@@ -795,7 +798,7 @@ async def execute_agent_pipeline(
             )
             if matches_query:
                 matching_fallbacks.append(fb)
-                
+
         if matching_fallbacks:
             products = matching_fallbacks
         elif has_valid_intent:
