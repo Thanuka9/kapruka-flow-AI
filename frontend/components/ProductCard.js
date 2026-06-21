@@ -282,7 +282,7 @@ export default function ProductCard({
       <div className="mt-3 pt-3 border-t border-flow-border flex gap-2 items-center justify-between relative">
         {isInCart ? (
           <>
-            <button type="button" onClick={onRemove} className="btn-secondary text-semantic-error border-red-100 hover:border-red-200 min-h-[40px] text-sm px-3">
+            <button type="button" onClick={onRemove} className="flex items-center justify-center gap-1.5 min-h-[40px] px-3.5 rounded-xl border border-red-900/30 bg-red-950/20 text-red-400 hover:bg-red-900/40 hover:text-red-300 transition-all text-sm font-semibold cursor-pointer">
               {activeStrings.remove}
             </button>
             <div className="relative">

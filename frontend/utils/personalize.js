@@ -26,42 +26,68 @@ export function getSeason(date = new Date(), lang = "en") {
   const m = date.getMonth() + 1; // 1-12
   const L = lang === "si-LK" ? "si" : lang === "en-LK" ? "tanglish" : "en";
 
-  const make = (emoji, en, si, tg, terms) => ({ emoji, text: pick(L, en, si, tg), terms });
+  const make = (emoji, en, si, tg, terms, qEn, qSi, qTg) => ({
+    emoji,
+    text: pick(L, en, si, tg),
+    terms,
+    query: pick(L, qEn, qSi, qTg)
+  });
 
   if (m === 4)
     return make("🌸", "Avurudu is near — sweets, kavum & gift hampers are trending.",
       "අවුරුදු ළඟයි — රසකැවිලි සහ තෑගි කලඹ ජනප්‍රියයි.",
       "Avurudu lagai — sweets saha gift hampers trending.",
-      "avurudu sweets hamper");
+      "avurudu sweets hamper",
+      "Avurudu sweets and gift hamper",
+      "අවුරුදු රසකැවිලි සහ තෑගි",
+      "Avurudu sweets and gift hamper");
   if (m === 12)
     return make("🎄", "Christmas season — cakes, gifts & hampers are popular now.",
       "නත්තල් සමය — කේක්, තෑගි සහ කලඹ ජනප්‍රියයි.",
       "Christmas season — cakes, gifts, hampers popular.",
-      "christmas cake gift hamper");
+      "christmas cake gift hamper",
+      "Christmas cake and gift hamper",
+      "නත්තල් කේක් සහ තෑගි",
+      "Christmas cake and gift hamper");
   if (m === 5)
     return make("🪔", "Vesak & Mother's Day season — flowers and thoughtful gifts shine.",
       "වෙසක් සහ මව්වරුන්ගේ දිනය — මල් සහ තෑගි.",
       "Vesak & Mother's Day — flowers saha gifts.",
-      "flowers gift cake");
+      "flowers gift cake",
+      "Mother's Day flowers and gifts",
+      "මව්වරුන්ගේ දින මල් සහ තෑගි",
+      "Mother's Day flowers and gifts");
   if (m === 2)
     return make("❤️", "Valentine's season — flowers, chocolates & romantic gifts.",
       "වැලන්ටයින් සමය — මල්, චොකලට් සහ තෑගි.",
       "Valentine's season — flowers, chocolates, gifts.",
-      "flowers chocolates gift");
+      "flowers chocolates gift",
+      "Valentine's flowers and chocolates",
+      "වැලන්ටයින් මල් සහ චොකලට්",
+      "Valentine's flowers and chocolates");
   if (m === 6)
     return make("👔", "Father's Day season — gifts for him are trending.",
       "පියවරුන්ගේ දිනය — තාත්තාට තෑගි.",
       "Father's Day — gifts for him trending.",
-      "gift for father watch");
+      "gift for father watch",
+      "Father's Day gifts for dad",
+      "තාත්තාට පියවරුන්ගේ දින තෑගි",
+      "Father's Day gifts for dad");
   if (m === 1)
     return make("🎆", "New Year — start it with a thoughtful gift or fresh groceries.",
       "අලුත් අවුරුද්ද — තෑගි හෝ බඩු.",
       "New Year — gift ekak naththan groceries.",
-      "gift hamper groceries");
+      "gift hamper groceries",
+      "New Year gift hamper",
+      "අලුත් අවුරුදු තෑගි",
+      "New Year gift hamper");
   return make("🎁", "Gifting season — surprise someone with a curated hamper.",
     "තෑගි සමය — කලඹකින් පුදුම කරන්න.",
     "Gifting season — hamper ekakin surprise karanna.",
-    "gift hamper flowers");
+    "gift hamper flowers",
+    "Gift hamper for family",
+    "පවුලේ අයට තෑගි",
+    "Gift hamper for family");
 }
 
 // Builds "Picked for you" suggestion chips from order history + saved bookmarks.

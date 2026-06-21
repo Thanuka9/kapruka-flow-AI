@@ -321,10 +321,15 @@ export default function IntentCanvas({
             >
               {s.build_my_cart || "Build My Cart"} →
             </button>
-            <div className="flow-chip gap-1.5 text-xs px-3 shrink-0 text-slate-400 border-white/10">
+            <button
+              type="button"
+              onClick={() => handleSuggClick(season.query || season.text)}
+              className="flow-chip gap-1.5 text-xs px-3 shrink-0 text-slate-400 border-white/10 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+              title={season.text}
+            >
               <span>{season.emoji}</span>
               <span className="hidden sm:inline truncate max-w-[120px]">{season.text}</span>
-            </div>
+            </button>
           </div>
         </form>
 
