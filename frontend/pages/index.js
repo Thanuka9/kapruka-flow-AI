@@ -921,10 +921,12 @@ export default function Home() {
 
       {/* Main Content Area — dark premium workspace below Kapruka site header */}
       <main
-        className={`flex-1 w-full flow-container relative z-10 ${
+        className={`flex-1 w-full relative z-10 ${
           pageState === "cart"
-            ? "py-4 md:py-6 flex flex-col items-stretch"
-            : "py-6 md:py-10 flex flex-col items-center justify-center"
+            ? "flow-container py-4 md:py-6 flex flex-col items-stretch"
+            : pageState === "workspace"
+            ? "flow-container py-6 md:py-10 flex flex-col items-center justify-center"
+            : "w-full flex flex-col items-stretch justify-start"
         }`}
       >
         {pageState === "input" && (
@@ -1052,7 +1054,7 @@ export default function Home() {
       />
 
       {/* Branded Footer */}
-      <footer className="w-full px-6 py-10 bg-white border-t border-flow-border text-flow-secondary relative z-20 text-base">
+      <footer className="w-full px-6 py-10 bg-flow-card border-t border-flow-border text-flow-secondary relative z-20 text-base">
         <div className="max-w-flow mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-flow-muted">
             © {new Date().getFullYear()} Kapruka Holdings PLC. Kapruka Agent Challenge 2026.

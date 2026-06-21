@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { KapriAvatar } from "./AgentPersona";
 import Icon3D from "./Icon3D";
-import { getSeason, buildPickedForYou } from "../utils/personalize";
+import { getSeason, buildPickedForYou, getDynamicSuggestions } from "../utils/personalize";
 import { getBookmarks } from "../utils/bookmarks";
 import { getMcpStatusPresentation } from "./localization";
 
@@ -29,33 +29,7 @@ const AMBIENT_PARTICLES = [
   { size: 3,  color: "rgba(216,0,0,0.12)",    top: "66%",  left: "80%",  ad: "10.5s",ax: "-12px", ay: "18px",  ao: 0.12 },
 ];
 
-// ── ChatGPT-style suggestion cards ───────────────────────────────────
-function getSuggestionCards(language) {
-  if (language === "si-LK") return [
-    { icon: "🎂", title: "අම්මාට Birthday Gift",   subtitle: "Cake + flowers under Rs 5,000", text: "අම්මාට birthday cake and flowers Rs 5000 යටතේ" },
-    { icon: "💝", title: "Valentine's Surprise",     subtitle: "Romantic hamper under Rs 8,000",  text: "Valentine's Day romantic gift hamper under Rs 8000" },
-    { icon: "🎁", title: "Birthday Hamper",          subtitle: "Premium gift set Rs 10,000",      text: "premium birthday hamper Rs 10000 budget" },
-    { icon: "🌸", title: "Anniversary Flowers",      subtitle: "Flower bouquet + chocolates",     text: "anniversary flowers and chocolates Rs 6000" },
-    { icon: "🍫", title: "Chocolate Box",            subtitle: "Assorted premium chocolates",     text: "premium chocolate gift box Rs 3000" },
-    { icon: "🧺", title: "Family Groceries",        subtitle: "Weekly groceries Rs 15,000",      text: "family groceries weekly Rs 15000" },
-  ];
-  if (language === "en-LK") return [
-    { icon: "🎂", title: "Amma's Birthday",          subtitle: "Cake + flowers Rs 5000 ata",     text: "Amma's birthday cake and flowers under Rs 5000" },
-    { icon: "💍", title: "Anniversary Gift",         subtitle: "Romantic set, Rs 8000 ata",      text: "anniversary romantic gift set Rs 8000 budget" },
-    { icon: "🎁", title: "Office Farewell",          subtitle: "Hamper for colleague, Rs 3000",   text: "office farewell hamper Rs 3000" },
-    { icon: "🌸", title: "Valentine's Surprise",     subtitle: "Flowers + choc, Rs 6000ṭa",      text: "Valentine's flowers and chocolates Rs 6000" },
-    { icon: "🧁", title: "Baby Shower",             subtitle: "Baby gifts Rs 5000ṭa",            text: "baby shower gifts under Rs 5000" },
-    { icon: "🛒", title: "Grocery Run",             subtitle: "Weekly shopping Rs 12,000",       text: "weekly groceries Rs 12000" },
-  ];
-  return [
-    { icon: "🎂", title: "Birthday Gifts",           subtitle: "Cake, flowers & chocolates",     text: "Birthday cake and flowers under Rs 5,000" },
-    { icon: "💍", title: "Anniversary Hamper",       subtitle: "Romantic set under Rs 10,000",   text: "anniversary hamper romantic gift Rs 10000" },
-    { icon: "🎁", title: "Office Farewell",          subtitle: "Premium gift Rs 3,000–5,000",    text: "office farewell gift Rs 5000 budget" },
-    { icon: "🌹", title: "Valentine's Surprise",     subtitle: "Flowers + chocolates delivered",  text: "Valentine's flowers and chocolates under Rs 8000" },
-    { icon: "🧸", title: "Kids Birthday",            subtitle: "Toys & treats under Rs 4,000",   text: "kids birthday toys and treats Rs 4000" },
-    { icon: "🛒", title: "Family Groceries",        subtitle: "Weekly basket Rs 10,000–20,000", text: "family groceries weekly Rs 15000" },
-  ];
-}
+// Suggestions are loaded dynamically via getDynamicSuggestions from personalization utilities
 
 // ── Cycling placeholder text ─────────────────────────────────────────
 function getPlaceholders(language) {
@@ -94,7 +68,7 @@ export default function IntentCanvas({
   const season = getSeason(new Date(), language);
   const bookmarks = typeof window !== "undefined" ? getBookmarks() : [];
   const pickedForYou = buildPickedForYou(userOrders, language, bookmarks);
-  const suggCards = getSuggestionCards(language);
+  const suggCards = getDynamicSuggestions(new Date(), language);
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
   const [isVoiceSupported, setIsVoiceSupported] = useState(false);

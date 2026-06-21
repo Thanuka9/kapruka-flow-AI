@@ -24,19 +24,19 @@ module.exports = {
 
         flow: {
 
-          bg: "#F8FAFC",
+          bg: "var(--color-bg)",
 
-          "bg-secondary": "#F4F6FA",
+          "bg-secondary": "var(--color-bg-secondary)",
 
-          card: "#FFFFFF",
+          card: "var(--color-card)",
 
-          border: "#E7ECF2",
+          border: "var(--color-border)",
 
-          text: "#0F172A",
+          text: "var(--color-text-primary)",
 
-          muted: "#94A3B8",
+          muted: "var(--color-text-muted)",
 
-          secondary: "#475569",
+          secondary: "var(--color-text-secondary)",
 
         },
 
