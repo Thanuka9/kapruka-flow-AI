@@ -194,22 +194,25 @@ export default function KaprukaHeader({
               </button>
             )}
 
-            <div className="relative hidden md:block">
-              <select
-                value={currentLanguage}
-                onChange={(e) => onLanguageChange(e.target.value)}
-                className="appearance-none h-11 pl-4 pr-10 text-sm font-bold text-slate-300 bg-white/5 border border-white/8 rounded-xl hover:bg-white/10 hover:border-white/15 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D80000]/25 transition-all"
-                aria-label="Language"
-              >
-                <option value="en-US" className="bg-[#0f172a] text-slate-300">EN</option>
-                <option value="si-LK" className="bg-[#0f172a] text-slate-300">සිංහල</option>
-                <option value="en-LK" className="bg-[#0f172a] text-slate-300">Tanglish</option>
-              </select>
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
-              </div>
+            <div className="hidden md:flex items-center bg-white/5 border border-white/8 rounded-xl p-1 h-11">
+              {[
+                { code: "en-US", label: "EN" },
+                { code: "si-LK", label: "සිං" },
+                { code: "en-LK", label: "Tang" }
+              ].map((lang) => (
+                <button
+                  key={lang.code}
+                  type="button"
+                  onClick={() => onLanguageChange(lang.code)}
+                  className={`h-8 px-3.5 text-xs font-black rounded-lg transition-all flex items-center justify-center ${
+                    currentLanguage === lang.code
+                      ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-[0_2px_8px_rgba(216,0,0,0.4)]"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
             </div>
 
             {user ? (

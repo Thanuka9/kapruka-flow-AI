@@ -143,7 +143,7 @@ export default function ProductCard({
     style: "currency",
     currency: product.price?.currency || "LKR",
     maximumFractionDigits: 0,
-  }).format(priceAmount);
+  }).format(priceAmount).replace(/\s+/g, " ");
 
   const categoryEmoji = getCategoryEmoji(product.category, product.category_emoji);
   const categoryLabel = product.category || activeStrings.general_category || "General";
@@ -335,7 +335,7 @@ export default function ProductCard({
                                   style: "currency",
                                   currency: c.price?.currency || "LKR",
                                   maximumFractionDigits: 0,
-                                }).format(altPrice)}
+                                }).format(altPrice).replace(/\s+/g, " ")}
                               </span>
                               {diffText && (
                                 <span className={`font-mono text-[10px] ${diffColor}`}>

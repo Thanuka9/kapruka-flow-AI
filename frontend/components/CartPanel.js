@@ -133,7 +133,7 @@ export default function CartPanel({
       style: "currency",
       currency: "LKR",
       maximumFractionDigits: 0
-    }).format(amount);
+    }).format(amount).replace(/\s+/g, " ");
   };
 
   const priceOf = (p) => p?.price?.amount ?? p?.price ?? 0;
@@ -531,29 +531,31 @@ export default function CartPanel({
                 {activeStrings.rollback_note || "* Click any past step to rollback selections and settings to that snapshot."}
               </p>
             </div>
-            <div className="space-y-3 relative pl-4 border-l border-flow-border max-h-52 overflow-y-auto">
+            <div className="space-y-3 relative pl-6 border-l-2 border-white/10 max-h-60 overflow-y-auto">
               {evolution.map((step, idx) => {
                 const isActiveStep = idx === evolution.length - 1;
                 return (
                   <div 
                     key={idx} 
                     onClick={() => onRollback && onRollback(idx)}
-                    className={`relative group cursor-pointer hover:bg-flow-bg-secondary p-3 rounded-xl transition-all ${
-                      isActiveStep ? "bg-flow-bg-secondary/40 border border-flow-border/50" : ""
+                    className={`relative group cursor-pointer p-3 rounded-xl transition-all border ${
+                      isActiveStep 
+                        ? "bg-white/5 border-white/12 shadow-[0_4px_16px_rgba(0,0,0,0.3)]" 
+                        : "border-transparent hover:bg-white/3 hover:border-white/5"
                     }`}
                     title="Click to rollback to this snapshot"
                   >
                     {/* Stepper Dot */}
-                    <div className={`absolute -left-[20.5px] top-4 w-2.5 h-2.5 rounded-full border-2 transition-all ${
+                    <div className={`absolute top-5 rounded-full border-2 transition-all ${
                       isActiveStep 
-                        ? "border-kapruka-gold bg-kapruka-gold shadow-[0_0_8px_var(--kapruka-gold)] scale-110" 
-                        : "border-kapruka-red bg-white group-hover:bg-kapruka-red"
+                        ? "-left-[33px] w-4 h-4 bg-[#F6C343] border-[#0f172a] shadow-[0_0_10px_#F6C343] scale-110" 
+                        : "-left-[31px] w-3 h-3 bg-[#090d16] border-slate-600 group-hover:border-red-500 group-hover:bg-[#D80000]"
                     }`}></div>
                     
-                    <div className={`text-label ${isActiveStep ? "text-kapruka-gold font-bold" : "group-hover:text-kapruka-red"}`}>
+                    <div className={`text-label ${isActiveStep ? "text-[#F6C343] font-bold" : "group-hover:text-red-400"}`}>
                       Step {idx + 1} {isActiveStep && " (Current)"}
                     </div>
-                    <div className={`text-base leading-snug ${isActiveStep ? "text-flow-text font-semibold" : "text-flow-text"}`}>
+                    <div className={`text-base leading-snug mt-0.5 ${isActiveStep ? "text-white font-semibold" : "text-slate-300"}`}>
                       {(step && step.label) || step || "Crate Curation Updated"}
                     </div>
                   </div>
@@ -626,7 +628,7 @@ export default function CartPanel({
                 onTouchEnd={() => onBudgetChange && onBudgetChange(sliderBudget)}
                 className="w-full"
               />
-              <span className="text-price text-kapruka-red shrink-0 text-xl">
+              <span className="text-price text-flow-text shrink-0 text-xl font-bold">
                 {formatCurrency(sliderBudget)}
               </span>
             </div>
@@ -637,7 +639,7 @@ export default function CartPanel({
               <span className="text-lg font-bold text-flow-text">{activeStrings.total_price}</span>
               <AnimatedTotal
                 value={formatTotal}
-                className={`budget-total-hero inline-block ${isOverBudget ? "text-semantic-error" : "text-kapruka-red"}`}
+                className={`budget-total-hero inline-block ${isOverBudget ? "text-semantic-error" : "text-flow-text"}`}
               />
             </div>
             <div className="flex justify-between text-base text-flow-muted pt-2">

@@ -353,7 +353,7 @@ export default function CheckoutModal({
     style: "currency",
     currency: "LKR",
     maximumFractionDigits: 0
-  }).format((totalCost || 0) + deliveryFee);
+  }).format((totalCost || 0) + deliveryFee).replace(/\s+/g, " ");
 
   function handleShare() {
     const text = `🎁 Kapruka Order #${orderResult?.order_number || "—"} placed!\nTotal: ${formattedTotal}\nTracking via Kapruka Flow AI → https://kapruka-flow-ai.vercel.app`;
@@ -676,7 +676,7 @@ export default function CheckoutModal({
                   <div className="flex justify-between font-bold text-white text-sm border-t border-white/10 pt-1.5">
                     <span>{activeStrings.final_total}</span>
                     <span className="font-mono text-kapruka-red">
-                      {new Intl.NumberFormat("en-LK", { style: "currency", currency: orderResult.currency || "LKR", maximumFractionDigits: 0 }).format(orderResult.total)}
+                      {new Intl.NumberFormat("en-LK", { style: "currency", currency: orderResult.currency || "LKR", maximumFractionDigits: 0 }).format(orderResult.total).replace(/\s+/g, " ")}
                     </span>
                   </div>
                 </div>

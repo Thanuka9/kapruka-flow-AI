@@ -51,7 +51,7 @@ export default function PlanComparisonMatrix({
       style: "currency",
       currency: "LKR",
       maximumFractionDigits: 0
-    }).format(val);
+    }).format(val).replace(/\s+/g, " ");
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md overflow-y-auto flex items-center justify-center p-4">

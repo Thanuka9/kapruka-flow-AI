@@ -90,7 +90,7 @@ export function interpretRefineMessage(rawText) {
   } else if (/\b(premium|upgrade|luxury|fancy|better quality|high end|impressive|nicer)\b/.test(lower)) {
     actions.push({ type: "plan", value: "premium" });
   }
-  if (/\b(fast|today|same day|asap|urgent|quick|express|hurry|now)\b/.test(lower)) {
+  if (/\b(fast|today|same[- ]day|asap|urgent|quick|express|hurry|now)\b/.test(lower)) {
     actions.push({ type: "plan", value: "fast" });
   }
 
