@@ -73,6 +73,10 @@ body {
   overflow-x: hidden;
 }
 
+button, input, select, textarea {
+  font-family: var(--font-sans) !important;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans);
   color: var(--color-text-primary);
@@ -136,20 +140,27 @@ h1, h2, h3, h4, h5, h6 {
 /* ── Inputs ──────────────────────────────────────────────────────── */
 .input-premium,
 .flow-input {
-  background: #FFFFFF;
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.06); /* Premium dark glass bg */
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--color-text-primary);
   border-radius: 12px;
   font-family: var(--font-sans);
   font-size: 1rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .input-premium:focus,
 .flow-input:focus {
   outline: none;
+  background: rgba(255, 255, 255, 0.1);
   border-color: var(--kapruka-red);
-  box-shadow: 0 0 0 3px rgba(216, 0, 0, 0.08);
+  box-shadow: 0 0 0 3px rgba(216, 0, 0, 0.15);
+}
+
+.input-premium::placeholder,
+.flow-input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.7;
 }
 
 .flow-input-hero {
@@ -1038,7 +1049,7 @@ input[type="range"]::-moz-range-thumb:active {
     position: sticky;
     bottom: 0;
     z-index: 20;
-    background: linear-gradient(to top, #fff 85%, transparent);
+    background: linear-gradient(to top, var(--color-bg) 85%, transparent);
     padding-bottom: env(safe-area-inset-bottom, 0);
     margin: 0 -1rem;
     padding-left: 1rem;

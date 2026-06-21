@@ -209,7 +209,7 @@ export default function ProductCard({
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center text-center p-6 h-full w-full bg-gradient-to-br from-flow-bg-secondary to-white">
+            <div className="flex flex-col items-center justify-center text-center p-6 h-full w-full bg-gradient-to-br from-flow-bg-secondary to-flow-bg">
               <span className="text-5xl mb-3">{categoryEmoji}</span>
               <span className="text-label">{categoryLabel}</span>
             </div>
@@ -223,12 +223,12 @@ export default function ProductCard({
           )}
 
           {/* Delivery badge bottom-left */}
-          <span className="absolute bottom-2 left-2 px-2 py-1 rounded-pill text-xs font-medium bg-white/95 border border-flow-border text-flow-secondary shadow-sm">
+          <span className="absolute bottom-2 left-2 px-2 py-1 rounded-pill text-xs font-medium bg-[#090d16]/75 border border-white/10 text-slate-300 backdrop-blur-md shadow-sm">
             {deliveryLabel}
           </span>
 
           {product.in_stock === false && (
-            <span className="absolute top-2 right-2 px-2 py-1 rounded-pill text-xs font-semibold bg-amber-100 border border-amber-300 text-amber-900">
+            <span className="absolute top-2 right-2 px-2 py-1 rounded-pill text-xs font-semibold bg-amber-950/40 border border-amber-900/30 text-amber-400">
               {activeStrings.out_of_stock}
             </span>
           )}

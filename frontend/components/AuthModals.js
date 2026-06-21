@@ -270,7 +270,7 @@ export function ProfileModal({
           </button>
 
           {/* Profile header */}
-          <div className="shrink-0 px-5 pt-5 pb-4 border-b border-flow-border bg-gradient-to-br from-flow-bg-secondary to-white">
+          <div className="shrink-0 px-5 pt-5 pb-4 border-b border-flow-border bg-gradient-to-br from-flow-bg-secondary to-flow-bg">
             <div className="flex items-center gap-3 pr-8">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-flow-text shrink-0 shadow-card"
@@ -285,11 +285,11 @@ export function ProfileModal({
               </div>
             </div>
             <div className="flex gap-3 mt-4">
-              <div className="flex-1 rounded-xl bg-white border border-flow-border px-3 py-2 text-center">
+              <div className="flex-1 rounded-xl bg-white/[0.04] border border-flow-border px-3 py-2 text-center">
                 <p className="text-xl font-bold text-kapruka-red">{orders.length}</p>
                 <p className="text-xs text-flow-muted">{s.profile_orders_count || "Orders"}</p>
               </div>
-              <div className="flex-1 rounded-xl bg-white border border-flow-border px-3 py-2 text-center">
+              <div className="flex-1 rounded-xl bg-white/[0.04] border border-flow-border px-3 py-2 text-center">
                 <p className="text-xl font-bold text-flow-text">{bookmarks.length}</p>
                 <p className="text-xs text-flow-muted">{s.profile_bookmarks_count || "Saved"}</p>
               </div>
@@ -349,7 +349,7 @@ export function ProfileModal({
                     return (
                       <div
                         key={o.order_id}
-                        className="rounded-xl border border-flow-border bg-white p-4 shadow-sm hover:shadow-card transition-shadow"
+                        className="rounded-xl border border-flow-border bg-white/[0.04] p-4 shadow-sm hover:shadow-card transition-shadow"
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <span className="font-mono text-sm font-bold text-kapruka-red break-all">{o.order_id}</span>
@@ -452,7 +452,7 @@ export function ProfileModal({
                   bookmarks.map((b) => (
                     <div
                       key={b.id}
-                      className="flex gap-3 rounded-xl border border-flow-border bg-white p-3 items-center"
+                      className="flex gap-3 rounded-xl border border-flow-border bg-white/[0.04] p-3 items-center"
                     >
                       <div className="w-14 h-14 rounded-lg bg-flow-bg-secondary border border-flow-border overflow-hidden shrink-0 flex items-center justify-center text-xl">
                         {b.image_url ? (
