@@ -491,6 +491,8 @@ export default function CartPanel({
             insightsOnly={demoCompact}
             clientProfile={clientProfile}
             language={language}
+            cartVersions={cartVersions}
+            activeVersion={activeVersion}
           />
         </div>
 

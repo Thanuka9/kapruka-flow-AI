@@ -643,15 +643,16 @@ input[type="range"]::-moz-range-thumb:active {
   animation: progressPulse 1.5s ease-in-out infinite;
 }
 
-/* App background — soft light gradient, no dark aurora */
+/* App background — layered aurora effect */
 .app-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(216, 0, 0, 0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(246, 195, 67, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 60% at 50% -10%, rgba(216, 0, 0, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(246, 195, 67, 0.09) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
     var(--color-bg);
 }
 
@@ -717,42 +718,89 @@ input[type="range"]::-moz-range-thumb:active {
   }
 }
 
-/* ~12% dark band — keeps AI identity without full white wash */
+/* Hero zone — cinematic dark + aurora mesh */
 .flow-hero-zone {
   width: 100%;
+  position: relative;
+  background: linear-gradient(
+    160deg,
+    #0a0e1a 0%,
+    #0f172a 18%,
+    #1a0a2e 38%,
+    #0f172a 58%,
+    #0a1628 72%,
+    #f8fafc 100%
+  );
+  padding: 2.5rem 0 3rem;
+  overflow: hidden;
+}
+
+/* Mesh glow overlay inside hero */
+.flow-hero-zone::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background:
-    linear-gradient(180deg, #334155 0%, #64748b 12%, #f1f5f9 28%, var(--color-bg) 45%);
-  padding: 1.5rem 0 2.5rem;
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(216,0,0,0.14) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 50% at 10% 60%, rgba(246,195,67,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 40% at 90% 40%, rgba(99,102,241,0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Grid line texture */
+.flow-hero-zone::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 80%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 80%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .flow-hero-zone .hero-title {
-  color: #f8fafc;
+  color: #f1f5f9;
+  text-shadow: 0 2px 30px rgba(0,0,0,0.4);
 }
 
 .flow-hero-zone .hero-subtitle {
-  color: #cbd5e1;
+  color: #94a3b8;
 }
 
 .flow-hero-zone .trust-badge {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.18);
-  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+  backdrop-filter: blur(8px);
 }
 
 .flow-hero-input-shell {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-card);
   padding: 1.5rem;
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
+/* Compose card — glassmorphism dark */
 .hero-compose-card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 1rem 1.125rem;
-  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
-  border: 1px solid var(--color-border);
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 18px;
+  padding: 1.25rem 1.375rem;
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .trust-badge-sm {
@@ -1626,3 +1674,196 @@ select option {
     transition: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   HERO DARK OVERRIDES — inputs & selects inside dark glass card
+   ═══════════════════════════════════════════════════════════════════ */
+
+.hero-compose-card .flow-input,
+.hero-compose-card select.flow-input {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f1f5f9;
+}
+
+.hero-compose-card .flow-input::placeholder {
+  color: rgba(148, 163, 184, 0.6);
+}
+
+.hero-compose-card .flow-input:focus,
+.hero-compose-card select.flow-input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(246, 195, 67, 0.5);
+  box-shadow: 0 0 0 3px rgba(246, 195, 67, 0.12);
+  color: #f8fafc;
+}
+
+.hero-compose-card select.flow-input option {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+.hero-compose-card .btn-tertiary {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #94a3b8;
+}
+
+.hero-compose-card .btn-tertiary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+
+.hero-compose-card .border-flow-border\/80 {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.hero-compose-card .text-flow-text {
+  color: #f1f5f9;
+}
+
+.hero-compose-card .text-flow-muted {
+  color: #64748b;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CHATGPT-STYLE SUGGESTION CARDS — Hero
+   ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes suggCardIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.sugg-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  animation: suggCardIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  backdrop-filter: blur(12px);
+}
+
+.sugg-card:nth-child(1) { animation-delay: 0.05s; }
+.sugg-card:nth-child(2) { animation-delay: 0.12s; }
+.sugg-card:nth-child(3) { animation-delay: 0.19s; }
+.sugg-card:nth-child(4) { animation-delay: 0.26s; }
+.sugg-card:nth-child(5) { animation-delay: 0.33s; }
+.sugg-card:nth-child(6) { animation-delay: 0.40s; }
+
+@media (hover: hover) {
+  .sugg-card:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(246, 195, 67, 0.35);
+    transform: translateY(-2px);
+  }
+}
+
+.sugg-card-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  margin-bottom: 0.15rem;
+}
+
+.sugg-card-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.3;
+}
+
+.sugg-card-subtitle {
+  font-size: 0.7rem;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CHATGPT-STYLE SUGGESTIONS — Inside chat sidebar
+   ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes chatSuggIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.chat-sugg-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  font-weight: 500;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  animation: chatSuggIn 0.3s ease both;
+  width: 100%;
+}
+
+.chat-sugg-card:nth-child(1) { animation-delay: 0.05s; }
+.chat-sugg-card:nth-child(2) { animation-delay: 0.11s; }
+.chat-sugg-card:nth-child(3) { animation-delay: 0.17s; }
+.chat-sugg-card:nth-child(4) { animation-delay: 0.23s; }
+
+@media (hover: hover) {
+  .chat-sugg-card:hover {
+    background: rgba(246, 195, 67, 0.08);
+    border-color: rgba(246, 195, 67, 0.25);
+    color: #fde68a;
+  }
+}
+
+.chat-sugg-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ANIMATED ORBS — decorative floating blobs in hero
+   ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes orbFloat {
+  0%,100% { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(20px, -30px) scale(1.05); }
+  66%  { transform: translate(-15px, 15px) scale(0.97); }
+}
+
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  animation: orbFloat var(--orb-duration, 12s) ease-in-out infinite;
+  will-change: transform;
+  z-index: 0;
+}
+
+/* Scroll down indicator */
+@keyframes scrollBounce {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50%  { transform: translateY(5px); opacity: 1; }
+}
+
+.hero-scroll-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  color: rgba(148, 163, 184, 0.5);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: scrollBounce 2s ease infinite;
+}
+
