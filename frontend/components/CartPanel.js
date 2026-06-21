@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "./ProductCard";
 import PlanDiff, { computePlanDiff } from "./PlanDiff";
 import ShareFlowButton from "./ShareFlowButton";
+import CurationReport from "./CurationReport";
+import PlanComparisonMatrix from "./PlanComparisonMatrix";
 import RukaChat from "./RukaChat";
 import Icon3D from "./Icon3D";
 import { getMcpToolLabel } from "./localization";
@@ -82,6 +84,7 @@ export default function CartPanel({
 
   const [fetchedAlternatives, setFetchedAlternatives] = useState([]);
   const [altLoading, setAltLoading] = useState(false);
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
 
   // Slider budget state
   const [sliderBudget, setSliderBudget] = useState(budgetLimit);
@@ -309,9 +312,29 @@ export default function CartPanel({
       {/* Product area */}
       <div className="space-y-5 min-w-0">
         
+        <CurationReport
+          items={items}
+          budgetLimit={budgetLimit}
+          metadata={metadata}
+          language={language}
+        />
+
         <AnimatePresence>
           {planDiff && <PlanDiff diff={planDiff} strings={activeStrings} activeVersion={activeVersion} />}
         </AnimatePresence>
+
+        <div className="flex justify-between items-center gap-2">
+          <p className="text-xs text-flow-secondary uppercase tracking-widest font-semibold">
+            {activeStrings.cart_variations || "Crate Variations"}
+          </p>
+          <button
+            type="button"
+            onClick={() => setCompareModalOpen(true)}
+            className="text-xs font-bold text-kapruka-gold hover:text-kapruka-gold/80 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/8 hover:bg-white/8"
+          >
+            ⚖️ Compare Versions
+          </button>
+        </div>
 
         {/* Tab Switcher for Cart Versions */}
         <div className="flow-card p-1.5 flex overflow-x-auto scrollbar-none gap-1.5 relative">
@@ -749,6 +772,17 @@ export default function CartPanel({
         )}
 
       </div>
+
+      {compareModalOpen && (
+        <PlanComparisonMatrix
+          cartVersions={cartVersions}
+          activeVersion={activeVersion}
+          onSelectVersion={onVersionChange}
+          onClose={() => setCompareModalOpen(false)}
+          strings={activeStrings}
+          language={language}
+        />
+      )}
     </div>
   );
 }

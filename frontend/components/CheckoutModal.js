@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import LiveDeliveryMap from "./LiveDeliveryMap";
 
 // Confetti emoji pool
 const CONFETTI_EMOJIS = ["🎁","🎂","🌸","🍫","✨","💝","🎉","🌺","🧁","🎊","💐","🥂"];
@@ -622,12 +623,13 @@ export default function CheckoutModal({
               </div>
 
               {/* ── Live Delivery Tracker ── */}
-              <div className="border border-white/10 rounded-xl p-4 bg-white/3 text-left">
-                <div className="flex items-center gap-2 mb-3">
+              <div className="border border-white/10 rounded-xl p-4 bg-white/3 text-left space-y-4">
+                <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-white">🗺 Your Gift is on its Way</span>
                   <span className="text-xs text-kapruka-gold/70 animate-pulse">● Live</span>
                 </div>
                 <DeliveryTracker deliveryDate={orderResult.delivery_date} />
+                <LiveDeliveryMap city={orderResult.delivery_city || city} />
               </div>
 
               {/* Order ref note */}

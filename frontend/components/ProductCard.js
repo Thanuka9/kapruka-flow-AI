@@ -307,28 +307,45 @@ export default function ProductCard({
                   ) : (
                     displayProducts
                       .filter((c) => c.id !== product.id)
-                      .map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => {
-                            onReplace(c);
-                            setShowReplaceMenu(false);
-                            setSearchQuery("");
-                            setSearchResults([]);
-                          }}
-                          className="w-full text-left p-3 hover:bg-flow-bg-secondary rounded-xl text-base transition-colors flex justify-between gap-2 text-flow-text"
-                        >
-                          <span className="truncate">{c.name}</span>
-                          <span className="font-bold text-kapruka-red shrink-0">
-                            {new Intl.NumberFormat("en-LK", {
-                              style: "currency",
-                              currency: c.price?.currency || "LKR",
-                              maximumFractionDigits: 0,
-                            }).format(c.price?.amount || c.price || 0)}
-                          </span>
-                        </button>
-                      ))
+                      .map((c) => {
+                        const altPrice = c.price?.amount ?? c.price ?? 0;
+                        const priceDiff = altPrice - priceAmount;
+                        const diffText = priceDiff === 0 
+                          ? "" 
+                          : priceDiff > 0 
+                            ? `(+${new Intl.NumberFormat("en-LK").format(priceDiff)} LKR)`
+                            : `(-${new Intl.NumberFormat("en-LK").format(Math.abs(priceDiff))} LKR)`;
+                        const diffColor = priceDiff > 0 ? "text-amber-500 font-bold" : "text-emerald-500 font-bold";
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              onReplace(c);
+                              setShowReplaceMenu(false);
+                              setSearchQuery("");
+                              setSearchResults([]);
+                            }}
+                            className="w-full text-left p-2.5 hover:bg-flow-bg-secondary rounded-xl text-xs transition-colors flex flex-col gap-1 text-flow-text border border-transparent hover:border-flow-border/50"
+                          >
+                            <span className="truncate font-semibold text-flow-text w-full">{c.name}</span>
+                            <div className="flex justify-between items-center w-full text-[11px] mt-0.5">
+                              <span className="font-bold text-kapruka-red font-mono">
+                                {new Intl.NumberFormat("en-LK", {
+                                  style: "currency",
+                                  currency: c.price?.currency || "LKR",
+                                  maximumFractionDigits: 0,
+                                }).format(altPrice)}
+                              </span>
+                              {diffText && (
+                                <span className={`font-mono text-[10px] ${diffColor}`}>
+                                  {diffText}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })
                   )}
                 </div>
               )}

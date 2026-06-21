@@ -1924,3 +1924,28 @@ select option {
   animation: scrollBounce 2s ease infinite;
 }
 
+/* ── Live Delivery Map Animations ── */
+@keyframes routeShimmer {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.animate-route-shimmer {
+  stroke-dashoffset: 20;
+  animation: routeShimmer 1.2s linear infinite;
+}
+
+@keyframes truckTransit {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+g {
+  offset-rotate: auto;
+}
+
