@@ -182,7 +182,7 @@ export default function KaprukaHeader({
               <button
                 type="button"
                 onClick={onNewFlow}
-                className="kapruka-nav-btn flex items-center justify-center h-11 px-3 sm:px-4 bg-gray-50 border border-gray-200 hover:border-[#D80000]/30 hover:bg-red-50 text-[#D80000] rounded-xl transition-all font-bold text-sm sm:text-base gap-1.5"
+                className="new-flow-btn kapruka-nav-btn flex items-center justify-center h-11 px-3 sm:px-4 bg-gray-50 border border-gray-200 hover:border-[#D80000]/30 hover:bg-red-50 text-[#D80000] rounded-xl transition-all font-bold text-sm sm:text-base gap-1.5"
                 title={s.new_flow || "Start New Flow"}
               >
                 <span>🔄</span>

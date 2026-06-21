@@ -16,7 +16,32 @@ function deliveryPillLabel(speed, strings) {
 }
 
 /**
- * AI Insights — compact pills, dark panel. Refine composer at bottom.
+ * Build a contextual opening greeting from intent metadata — Ruka speaks first.
+ */
+function buildGreeting(metadata, strings, prompt) {
+  const intent = metadata?.intent_parsed || {};
+  const recipient = intent.recipient
+    ? ` for ${intent.recipient}`
+    : "";
+  const occasion = intent.occasion
+    ? ` — ${String(intent.occasion).replace(/_/g, " ")}`
+    : "";
+  const budget = metadata?.budget_limit
+    ? ` within Rs ${new Intl.NumberFormat("en-LK", { maximumFractionDigits: 0 }).format(metadata.budget_limit)}`
+    : "";
+  const cats = (intent.matched_categories || []).slice(0, 2).join(" & ") || "gifts";
+
+  if (intent.occasion || intent.recipient) {
+    return `I curated the perfect ${cats}${recipient}${occasion}${budget}. 🎁 Switch plans or chat with me to refine!`;
+  }
+  if (prompt) {
+    return `Here's your curated cart for "${prompt.slice(0, 48)}${prompt.length > 48 ? "…" : ""}"${budget}. Anything you'd like to tweak?`;
+  }
+  return strings.agent_reply_intro || "Done! Here's what I pulled together. Switch plans or ask me anything. 🛒";
+}
+
+/**
+ * Ruka AI chat panel — insights, typing bubble, greeting, chip wiggle.
  */
 export default function RukaChat({
   messages = [],
@@ -47,14 +72,14 @@ export default function RukaChat({
     (metadata.intent_parsed?.matched_categories || [])
       .map((c) => String(c).toLowerCase().trim())
   );
-  
+
   const showChoc = !categoriesInCart.has("chocolate");
   const showFlowers = !categoriesInCart.has("flowers");
   const showCake = !categoriesInCart.has("cake");
-  
+
   let dynamicAddLabel = strings.qr_add_choc || "Add chocolates";
   let dynamicAddText = "add chocolates";
-  
+
   if (!showChoc) {
     if (showFlowers) {
       dynamicAddLabel = strings.qr_add_flowers || "Add flowers";
@@ -115,7 +140,16 @@ export default function RukaChat({
     });
   }
 
-  const lastAgent = messages.filter((m) => m.role === "agent").slice(-1)[0];
+  // Contextual Ruka greeting — shown once at top of chat
+  const greeting = useMemo(
+    () => buildGreeting(metadata, strings, prompt),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  // Non-greeting agent messages
+  const agentMessages = messages.filter((m) => m.role === "agent");
+  const lastAgent = agentMessages.slice(-1)[0];
 
   function submit(value) {
     const v = (value ?? text).trim();
@@ -126,6 +160,7 @@ export default function RukaChat({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Header */}
       <div className="flex items-center gap-3 pb-4 border-b border-white/10">
         <KapriAvatar size={40} pulse={busy} />
         <div>
@@ -138,7 +173,14 @@ export default function RukaChat({
         </div>
       </div>
 
-      <div ref={scrollRef} className={`flex-1 overflow-y-auto py-3 space-y-2 ${insightsOnly ? "max-h-[120px] min-h-0" : "max-h-[220px] min-h-[80px]"}`}>
+      {/* Scroll area */}
+      <div
+        ref={scrollRef}
+        className={`flex-1 overflow-y-auto py-3 space-y-3 ${
+          insightsOnly ? "max-h-[120px] min-h-0" : "max-h-[240px] min-h-[80px]"
+        }`}
+      >
+        {/* AI insight pills */}
         {pills.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {pills.map((p, i) => (
@@ -150,24 +192,31 @@ export default function RukaChat({
           </div>
         )}
 
-        {prompt && !pills.length && (
-          <p className="text-sm text-slate-300 leading-relaxed">{prompt}</p>
+        {/* Ruka greeting bubble — always first */}
+        {!insightsOnly && (
+          <div className="ruka-greeting-bubble">
+            {greeting}
+          </div>
         )}
 
+        {/* Subsequent agent messages */}
         {lastAgent && !insightsOnly && (
           <p className="text-sm text-slate-400 leading-relaxed border-t border-white/10 pt-3">
             {lastAgent.text}
           </p>
         )}
 
+        {/* Typing indicator bubble */}
         {busy && (
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-kapruka-gold animate-pulse" />
-            {strings.agent_thinking}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/8 w-fit">
+            <span className="typing-dot" />
+            <span className="typing-dot" />
+            <span className="typing-dot" />
           </div>
         )}
       </div>
 
+      {/* Quick replies + input */}
       {!insightsOnly && (
         <>
           <div className="flex flex-wrap gap-2 pt-3 pb-3 border-t border-white/10">
@@ -177,7 +226,7 @@ export default function RukaChat({
                 type="button"
                 disabled={busy}
                 onClick={() => submit(q.text)}
-                className="insight-pill cursor-pointer hover:bg-white/12 disabled:opacity-50"
+                className="insight-pill quick-reply-chip cursor-pointer disabled:opacity-50"
               >
                 {q.label}
               </button>

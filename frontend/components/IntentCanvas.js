@@ -6,6 +6,44 @@ import { getBookmarks } from "../utils/bookmarks";
 import { getQuickSuggestions, getMcpStatusPresentation } from "./localization";
 import { DEMO_PROMPT } from "../constants/demo";
 
+// Ambient floating particles config (12 dots)
+const AMBIENT_PARTICLES = [
+  { size: 6,  color: "rgba(246,195,67,0.45)", top: "18%", left: "8%",  ad: "7.2s", ax: "22px", ay: "-18px", ao: 0.45 },
+  { size: 4,  color: "rgba(216,0,0,0.25)",    top: "32%", left: "92%", ad: "9.1s", ax: "-16px", ay: "12px",  ao: 0.25 },
+  { size: 8,  color: "rgba(246,195,67,0.3)",  top: "72%", left: "5%",  ad: "8.4s", ax: "18px",  ay: "-24px", ao: 0.30 },
+  { size: 5,  color: "rgba(216,0,0,0.2)",     top: "15%", left: "78%", ad: "6.8s", ax: "-20px", ay: "15px",  ao: 0.20 },
+  { size: 7,  color: "rgba(246,195,67,0.35)", top: "55%", left: "88%", ad: "10s",  ax: "-14px", ay: "-20px", ao: 0.35 },
+  { size: 3,  color: "rgba(255,255,255,0.2)", top: "80%", left: "22%", ad: "7.8s", ax: "12px",  ay: "8px",   ao: 0.20 },
+  { size: 6,  color: "rgba(246,195,67,0.25)", top: "42%", left: "3%",  ad: "11s",  ax: "20px",  ay: "-10px", ao: 0.25 },
+  { size: 4,  color: "rgba(216,0,0,0.15)",    top: "8%",  left: "55%", ad: "8.9s", ax: "-8px",  ay: "20px",  ao: 0.15 },
+  { size: 5,  color: "rgba(246,195,67,0.4)",  top: "88%", left: "68%", ad: "9.5s", ax: "16px",  ay: "-12px", ao: 0.40 },
+  { size: 3,  color: "rgba(255,255,255,0.15)",top: "60%", left: "45%", ad: "12s",  ax: "-18px", ay: "16px",  ao: 0.15 },
+  { size: 9,  color: "rgba(246,195,67,0.2)",  top: "25%", left: "35%", ad: "14s",  ax: "10px",  ay: "-8px",  ao: 0.20 },
+  { size: 4,  color: "rgba(216,0,0,0.12)",    top: "68%", left: "82%", ad: "10.5s",ax: "-12px", ay: "18px",  ao: 0.12 },
+];
+
+// Locale-aware cycling placeholder examples
+function getPlaceholders(language) {
+  if (language === "si-LK") return [
+    "අම්මාට 60 වන誕生日 ගිෆ්ට් Rs 5000 යටතේ...",
+    "ආදරණීය කෑකේ සහ සරුංගල් Rs 3000ට...",
+    "බෞද්ධ ශාලාවට ෆ්ලවර් හැම්පර් Rs 8000...",
+    "ළමයින්ට Birthday Cake Rs 4000 ඇතුළතින...",
+  ];
+  if (language === "en-LK") return [
+    "Amma's birthday cake + flowers under Rs 5000...",
+    "Anniversary gift for akki, something romantic...",
+    "Office farewell hamper Rs 3000ṭa...",
+    "Baby shower gifts under Rs 6000...",
+  ];
+  return [
+    "Amma's 60th birthday gifts under Rs 5,000…",
+    "Valentine's surprise flowers + chocolates…",
+    "Anniversary hamper for two, Rs 8,000 budget…",
+    "Office farewell gift, something memorable…",
+  ];
+}
+
 export default function IntentCanvas({
   onStartBuild,
   language,
@@ -30,6 +68,22 @@ export default function IntentCanvas({
   const inputRef = useRef(null);
   const initialTextRef = useRef("");
 
+  // Cycling placeholder
+  const placeholders = getPlaceholders(language);
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  const [placeholderVisible, setPlaceholderVisible] = useState(true);
+
+  useEffect(() => {
+    const cycle = setInterval(() => {
+      setPlaceholderVisible(false);
+      setTimeout(() => {
+        setPlaceholderIdx((i) => (i + 1) % placeholders.length);
+        setPlaceholderVisible(true);
+      }, 400);
+    }, 3200);
+    return () => clearInterval(cycle);
+  }, [placeholders.length]);
+
   const mcpBadge = getMcpStatusPresentation(mcpStatus, strings);
 
   useEffect(() => {
@@ -38,7 +92,6 @@ export default function IntentCanvas({
       setIsVoiceSupported(!!SpeechRecognition);
     }
   }, []);
-
 
   useEffect(() => {
     const t = setTimeout(() => inputRef.current?.focus(), 80);
@@ -67,42 +120,26 @@ export default function IntentCanvas({
   function startVoice() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
-    
     initialTextRef.current = text.trim();
     const r = new SpeechRecognition();
     r.lang = language === "en-LK" ? "si-LK" : language;
     r.interimResults = true;
     r.continuous = true;
-    
     let finalTranscript = "";
-    
     r.onstart = () => setListening(true);
     r.onresult = (ev) => {
       let interimTranscript = "";
       for (let i = ev.resultIndex; i < ev.results.length; ++i) {
-        if (ev.results[i].isFinal) {
-          finalTranscript += ev.results[i][0].transcript;
-        } else {
-          interimTranscript += ev.results[i][0].transcript;
-        }
+        if (ev.results[i].isFinal) finalTranscript += ev.results[i][0].transcript;
+        else interimTranscript += ev.results[i][0].transcript;
       }
-      
       const combinedSpeech = (finalTranscript + interimTranscript).trim();
       if (combinedSpeech) {
-        setText(
-          initialTextRef.current
-            ? initialTextRef.current + " " + combinedSpeech
-            : combinedSpeech
-        );
+        setText(initialTextRef.current ? initialTextRef.current + " " + combinedSpeech : combinedSpeech);
       }
     };
-    r.onend = () => {
-      setListening(false);
-    };
-    r.onerror = (ev) => {
-      console.error("Speech recognition error:", ev.error);
-      setListening(false);
-    };
+    r.onend = () => setListening(false);
+    r.onerror = (ev) => { console.error("Speech recognition error:", ev.error); setListening(false); };
     recogRef.current = r;
     r.start();
   }
@@ -117,8 +154,29 @@ export default function IntentCanvas({
   const userName = user ? (user.name || user.email).split("@")[0] : null;
 
   return (
-    <div className="flow-hero-zone w-full">
-      <div className="w-full max-w-xl mx-auto px-4 sm:px-0 py-6 md:py-10 animate-fadeIn">
+    <div className="flow-hero-zone w-full relative overflow-hidden">
+
+      {/* ── Ambient floating particles ── */}
+      {AMBIENT_PARTICLES.map((p, i) => (
+        <span
+          key={i}
+          className="ambient-particle"
+          style={{
+            width: p.size,
+            height: p.size,
+            background: p.color,
+            top: p.top,
+            left: p.left,
+            "--ad": p.ad,
+            "--ax": p.ax,
+            "--ay": p.ay,
+            "--ao": p.ao,
+            animationDelay: `${i * 0.6}s`,
+          }}
+        />
+      ))}
+
+      <div className="w-full max-w-xl mx-auto px-4 sm:px-0 py-6 md:py-10 animate-fadeIn relative z-10">
         {/* Compact header */}
         <div className="text-center mb-6">
           <div className="flex flex-wrap justify-center gap-2 mb-4">
@@ -156,7 +214,8 @@ export default function IntentCanvas({
         {/* Single compose card */}
         <form onSubmit={handleSubmit} className="hero-compose-card w-full">
           <div className="flex items-center gap-3 pb-3 border-b border-flow-border/80">
-            <KapriAvatar size={36} />
+            {/* Avatar with flip-in entrance */}
+            <KapriAvatar size={36} flipIn />
             <div className="min-w-0 text-left flex-1">
               <p className="text-sm font-semibold text-flow-text leading-tight">
                 {s.agent_name || "Ruka"}
@@ -196,15 +255,19 @@ export default function IntentCanvas({
               )}
             </div>
 
-            <input
-              ref={inputRef}
-              type="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={s.input_placeholder}
-              className="flow-input w-full text-flow-text text-sm min-h-[44px] px-4 rounded-xl"
-              autoFocus
-            />
+            {/* Input with cycling placeholder */}
+            <div className="relative">
+              <input
+                ref={inputRef}
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder={placeholderVisible ? placeholders[placeholderIdx] : ""}
+                className="flow-input w-full text-flow-text text-sm min-h-[44px] px-4 rounded-xl transition-all"
+                autoFocus
+                style={{ transition: "placeholder-color 0.3s ease" }}
+              />
+            </div>
 
             <button
               type="submit"

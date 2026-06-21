@@ -304,7 +304,7 @@ export default function CartPanel({
   const outOfStockItems = items.filter((item) => item.in_stock === false);
 
   return (
-    <div className={`w-full grid grid-cols-1 xl:grid-cols-[1fr_min(340px,32vw)] gap-4 xl:gap-6 relative z-10 animate-fadeIn ${demoCompact ? "demo-cart-compact" : ""}`}>
+    <div className={`w-full grid grid-cols-1 xl:grid-cols-[1fr_min(340px,32vw)] gap-4 xl:gap-6 relative z-10 animate-fadeIn page-enter ${demoCompact ? "demo-cart-compact" : ""}`}>
       
       {/* Product area */}
       <div className="space-y-5 min-w-0">
@@ -369,7 +369,7 @@ export default function CartPanel({
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start cart-stagger"
               >
-                {items.map((item) => (
+                {items.map((item, idx) => (
                   <ProductCard
                     key={item.id}
                     product={item}
@@ -379,6 +379,7 @@ export default function CartPanel({
                     onReplace={(newProduct) => handleReplaceItem(item.id, newProduct)}
                     strings={activeStrings}
                     compact={demoCompact}
+                    cardIndex={idx}
                   />
                 ))}
               </motion.div>
@@ -431,6 +432,7 @@ export default function CartPanel({
                         onAdd={() => handleAddItem(candidate)}
                         strings={activeStrings}
                         compact
+                        cardIndex={0}
                       />
                     </div>
                   );

@@ -3,15 +3,18 @@ import { motion } from "framer-motion";
 const LKR = (n) =>
   new Intl.NumberFormat("en-LK", { maximumFractionDigits: 0 }).format(Number(n) || 0);
 
-/** Small circular Kapri avatar used across the chat surface — 3D glossy orb. */
-export function KapriAvatar({ size = 40, pulse = false }) {
+/** Small circular Kapri avatar — 3D glossy orb with dual pulse rings when thinking. */
+export function KapriAvatar({ size = 40, pulse = false, flipIn = false }) {
   return (
     <span
-      className="ruka-orb relative inline-flex items-center justify-center shrink-0"
+      className={`ruka-orb relative inline-flex items-center justify-center shrink-0 ${flipIn ? "avatar-flip-in" : ""}`}
       style={{ width: size, height: size }}
     >
       {pulse && (
-        <span className="absolute inset-0 rounded-full bg-[#fae555]/40 animate-ping" />
+        <>
+          <span className="ruka-pulse-ring" style={{ inset: `-${Math.round(size * 0.1)}px` }} />
+          <span className="ruka-pulse-ring ruka-pulse-ring-2" style={{ inset: `-${Math.round(size * 0.1)}px` }} />
+        </>
       )}
       <span className="relative" style={{ fontSize: size * 0.48 }} aria-hidden>
         🌸

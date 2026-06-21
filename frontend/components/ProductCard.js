@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { isBookmarked, toggleBookmark } from "../utils/bookmarks";
 import Icon3D from "./Icon3D";
 
@@ -18,6 +18,83 @@ function getCategoryEmoji(category, precomputed) {
   return "📦";
 }
 
+// ── Curation DNA chip parser ─────────────────────────────────────────
+const OCCASION_KEYWORDS = {
+  "birthday": { label: "Birthday", emoji: "🎂", type: "occasion" },
+  "birth day": { label: "Birthday", emoji: "🎂", type: "occasion" },
+  "anniversary": { label: "Anniversary", emoji: "💍", type: "occasion" },
+  "wedding": { label: "Wedding", emoji: "💒", type: "occasion" },
+  "valentine": { label: "Valentine's", emoji: "💝", type: "occasion" },
+  "mother's day": { label: "Mother's Day", emoji: "🌹", type: "occasion" },
+  "fathers day": { label: "Father's Day", emoji: "👔", type: "occasion" },
+  "christmas": { label: "Christmas", emoji: "🎄", type: "occasion" },
+  "new year": { label: "New Year", emoji: "🎆", type: "occasion" },
+  "graduation": { label: "Graduation", emoji: "🎓", type: "occasion" },
+  "farewell": { label: "Farewell", emoji: "✈️", type: "occasion" },
+  "get well": { label: "Get Well", emoji: "🌻", type: "occasion" },
+  "thank you": { label: "Thank You", emoji: "🙏", type: "occasion" },
+};
+
+const RECIPIENT_KEYWORDS = {
+  "amma": { label: "For Amma", emoji: "👩", type: "recipient" },
+  "mother": { label: "For Mum", emoji: "👩", type: "recipient" },
+  "mom": { label: "For Mum", emoji: "👩", type: "recipient" },
+  "father": { label: "For Dad", emoji: "👨", type: "recipient" },
+  "thaththa": { label: "For Thaththa", emoji: "👨", type: "recipient" },
+  "dad": { label: "For Dad", emoji: "👨", type: "recipient" },
+  "sister": { label: "For Sister", emoji: "👧", type: "recipient" },
+  "brother": { label: "For Brother", emoji: "👦", type: "recipient" },
+  "friend": { label: "For Friend", emoji: "🤝", type: "recipient" },
+  "colleague": { label: "For Colleague", emoji: "💼", type: "recipient" },
+  "teacher": { label: "For Teacher", emoji: "📚", type: "recipient" },
+  "girlfriend": { label: "For Her", emoji: "💕", type: "recipient" },
+  "boyfriend": { label: "For Him", emoji: "💙", type: "recipient" },
+  "partner": { label: "For Partner", emoji: "💑", type: "recipient" },
+  "baby": { label: "For Baby", emoji: "👶", type: "recipient" },
+  "kids": { label: "For Kids", emoji: "🧒", type: "recipient" },
+  "grandma": { label: "For Grandma", emoji: "👵", type: "recipient" },
+  "grandfather": { label: "For Grandpa", emoji: "👴", type: "recipient" },
+};
+
+const SENTIMENT_KEYWORDS = {
+  "heartfelt": { label: "Heartfelt", emoji: "💝", type: "sentiment" },
+  "premium": { label: "Premium", emoji: "✨", type: "sentiment" },
+  "luxur": { label: "Luxury", emoji: "👑", type: "sentiment" },
+  "budget": { label: "Value Pick", emoji: "💸", type: "sentiment" },
+  "popular": { label: "Popular", emoji: "⭐", type: "sentiment" },
+  "fresh": { label: "Fresh", emoji: "🌿", type: "sentiment" },
+  "classic": { label: "Classic", emoji: "🏛️", type: "sentiment" },
+  "surprise": { label: "Surprise", emoji: "🎉", type: "sentiment" },
+  "romantic": { label: "Romantic", emoji: "🌹", type: "sentiment" },
+  "healthy": { label: "Healthy", emoji: "🥗", type: "sentiment" },
+  "traditional": { label: "Traditional", emoji: "🏺", type: "sentiment" },
+  "best seller": { label: "Best Seller", emoji: "🔥", type: "sentiment" },
+  "handpicked": { label: "Handpicked", emoji: "🤌", type: "sentiment" },
+};
+
+function parseDnaChips(reason) {
+  if (!reason) return [];
+  const lower = reason.toLowerCase();
+  const chips = [];
+
+  for (const [kw, data] of Object.entries(OCCASION_KEYWORDS)) {
+    if (lower.includes(kw)) { chips.push(data); break; }
+  }
+  for (const [kw, data] of Object.entries(RECIPIENT_KEYWORDS)) {
+    if (lower.includes(kw)) { chips.push(data); break; }
+  }
+  for (const [kw, data] of Object.entries(SENTIMENT_KEYWORDS)) {
+    if (lower.includes(kw)) { chips.push(data); break; }
+  }
+  return chips.slice(0, 3);
+}
+
+const DNA_CHIP_CLASS = {
+  occasion: "dna-chip dna-chip-occasion",
+  recipient: "dna-chip dna-chip-recipient",
+  sentiment: "dna-chip dna-chip-sentiment",
+};
+
 export default function ProductCard({
   product,
   onRemove,
@@ -27,6 +104,7 @@ export default function ProductCard({
   candidates = [],
   strings,
   compact = false,
+  cardIndex = 0,
 }) {
   const activeStrings = strings || {
     remove: "Remove",
@@ -52,6 +130,8 @@ export default function ProductCard({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  const dnaChips = useMemo(() => parseDnaChips(product.reason), [product.reason]);
 
   const handleToggleSave = () => {
     const added = toggleBookmark(product);
@@ -99,10 +179,12 @@ export default function ProductCard({
 
   return (
     <div
-      className={`flow-card product-card-lift ${compact ? "p-3 product-demo-compact" : "p-4"} flex flex-col relative ${
+      className={`flow-card product-card-premium card-waterfall ${compact ? "p-3 product-demo-compact" : "p-4"} flex flex-col relative ${
         isInCart ? "flow-card-selected" : "opacity-95"
       } ${product.in_stock === false ? "border-amber-300 bg-amber-50/30" : ""} ${showReplaceMenu ? "z-50" : ""}`}
+      style={{ animationDelay: `${cardIndex * 0.07}s` }}
     >
+      {/* Bookmark / save */}
       <button
         type="button"
         onClick={handleToggleSave}
@@ -117,12 +199,13 @@ export default function ProductCard({
       </button>
 
       <div>
+        {/* Image area */}
         <div className={`w-full ${compact ? "h-32" : "h-44"} rounded-xl bg-flow-bg-secondary flex items-center justify-center mb-3 border border-flow-border overflow-hidden relative group`}>
           {hasValidImage ? (
             <img
               src={product.image_url}
               alt={product.name}
-              className="object-cover w-full h-full group-hover:scale-[1.02] transition-transform duration-500"
+              className="object-cover w-full h-full card-img-zoom"
               onError={() => setImgError(true)}
             />
           ) : (
@@ -131,11 +214,21 @@ export default function ProductCard({
               <span className="text-label">{categoryLabel}</span>
             </div>
           )}
+
+          {/* ✨ AI Pick badge top-left */}
+          {product.reason && !compact && (
+            <span className="absolute top-2 left-2 ai-pick-badge">
+              ✨ AI Pick
+            </span>
+          )}
+
+          {/* Delivery badge bottom-left */}
           <span className="absolute bottom-2 left-2 px-2 py-1 rounded-pill text-xs font-medium bg-white/95 border border-flow-border text-flow-secondary shadow-sm">
             {deliveryLabel}
           </span>
+
           {product.in_stock === false && (
-            <span className="absolute top-2 left-2 px-2 py-1 rounded-pill text-xs font-semibold bg-amber-100 border border-amber-300 text-amber-900">
+            <span className="absolute top-2 right-2 px-2 py-1 rounded-pill text-xs font-semibold bg-amber-100 border border-amber-300 text-amber-900">
               {activeStrings.out_of_stock}
             </span>
           )}
@@ -155,7 +248,7 @@ export default function ProductCard({
           )}
         </h3>
 
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-3">
           <p className="text-price text-kapruka-red">{formattedPrice}</p>
           {isInCart && product.quantity && (
             <span className="text-label bg-flow-bg-secondary px-3 py-1 rounded-pill">
@@ -164,9 +257,23 @@ export default function ProductCard({
           )}
         </div>
 
+        {/* ── Curation DNA chips ── */}
+        {dnaChips.length > 0 && !compact && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {dnaChips.map((chip, i) => (
+              <span key={i} className={DNA_CHIP_CLASS[chip.type] || "dna-chip dna-chip-sentiment"}>
+                {chip.emoji} {chip.label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* ── Upgraded curation note ── */}
         {product.reason && !compact && (
-          <div className="p-3 rounded-xl bg-flow-bg-secondary border border-flow-border mb-3">
-            <span className="text-label block mb-1">{activeStrings.curation_note}</span>
+          <div className="curation-note-block mb-3">
+            <span className="text-label block mb-1 text-kapruka-gold/80">
+              {activeStrings.curation_note}
+            </span>
             <p className="text-sm text-flow-secondary leading-relaxed">{product.reason}</p>
           </div>
         )}

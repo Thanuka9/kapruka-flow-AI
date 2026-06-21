@@ -1012,3 +1012,617 @@ select option {
 .animate-voice-bar-3 { animation: voice-bar-bounce-3 0.85s ease-in-out infinite; }
 .animate-voice-bar-4 { animation: voice-bar-bounce-4 0.7s ease-in-out infinite; }
 .animate-voice-bar-5 { animation: voice-bar-bounce-5 0.8s ease-in-out infinite; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CHAMPIONSHIP UPGRADE — Premium Cinematic Layer
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Package 1 · Cinematic Card System ─────────────────────────────── */
+
+@keyframes cardWaterfall {
+  0%   { opacity: 0; transform: translateY(22px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(-3px) scale(1.005); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.card-waterfall {
+  animation: cardWaterfall 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.card-waterfall:nth-child(1) { animation-delay: 0.00s; }
+.card-waterfall:nth-child(2) { animation-delay: 0.07s; }
+.card-waterfall:nth-child(3) { animation-delay: 0.14s; }
+.card-waterfall:nth-child(4) { animation-delay: 0.21s; }
+.card-waterfall:nth-child(5) { animation-delay: 0.28s; }
+.card-waterfall:nth-child(6) { animation-delay: 0.35s; }
+.card-waterfall:nth-child(7) { animation-delay: 0.40s; }
+.card-waterfall:nth-child(8) { animation-delay: 0.45s; }
+
+/* Triple-layer hover: lift + glow ring */
+.product-card-premium {
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    border-color 0.25s ease;
+  position: relative;
+}
+
+@media (hover: hover) {
+  .product-card-premium:hover {
+    transform: translateY(-6px) scale(1.008);
+    box-shadow:
+      0 20px 50px rgba(10, 20, 40, 0.14),
+      0 0 0 2px rgba(246, 195, 67, 0.45),
+      0 0 28px rgba(246, 195, 67, 0.18);
+    border-color: rgba(246, 195, 67, 0.5);
+  }
+
+  .product-card-premium:hover .card-img-zoom {
+    transform: scale(1.07);
+  }
+}
+
+.card-img-zoom {
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+/* AI Pick badge */
+@keyframes aiBadgeShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.ai-pick-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background-image: linear-gradient(
+    100deg,
+    #f6c343 0%,
+    #ffe07a 40%,
+    #f6c343 60%,
+    #d99a06 100%
+  );
+  background-size: 200% 100%;
+  color: #7c4a00;
+  animation: aiBadgeShimmer 2.2s ease-in-out infinite;
+  box-shadow: 0 2px 8px rgba(246, 195, 67, 0.4);
+}
+
+/* Curation DNA chips */
+.dna-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.dna-chip-occasion {
+  background: rgba(251, 191, 36, 0.15);
+  color: #92400e;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+.dna-chip-recipient {
+  background: rgba(236, 72, 153, 0.1);
+  color: #831843;
+  border: 1px solid rgba(236, 72, 153, 0.25);
+}
+.dna-chip-sentiment {
+  background: rgba(139, 92, 246, 0.1);
+  color: #4c1d95;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+/* Curation note block upgrade */
+.curation-note-block {
+  background: linear-gradient(135deg, rgba(246, 195, 67, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
+  border: 1px solid rgba(246, 195, 67, 0.2);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+/* ── Package 2 · Ruka Personality ──────────────────────────────────── */
+
+/* Ruka pulse ring when thinking */
+@keyframes rukaPulseRing {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  70%  { transform: scale(1.55); opacity: 0; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+
+.ruka-pulse-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(246, 195, 67, 0.65);
+  animation: rukaPulseRing 1.4s ease-out infinite;
+  pointer-events: none;
+}
+
+.ruka-pulse-ring-2 {
+  animation-delay: 0.5s;
+}
+
+/* Typing bubble dots */
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0);    opacity: 0.4; }
+  30%           { transform: translateY(-5px);  opacity: 1;   }
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
+  animation: typingDot 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.18s; }
+.typing-dot:nth-child(3) { animation-delay: 0.36s; }
+
+/* Quick-reply chip wiggle on hover */
+@keyframes chipWiggle {
+  0%,100% { transform: rotate(0deg); }
+  25%     { transform: rotate(-2deg); }
+  75%     { transform: rotate(2deg); }
+}
+
+.quick-reply-chip {
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+@media (hover: hover) {
+  .quick-reply-chip:hover {
+    animation: chipWiggle 0.35s ease;
+    background: rgba(255, 255, 255, 0.14) !important;
+  }
+}
+
+/* Ruka greeting bubble */
+.ruka-greeting-bubble {
+  background: linear-gradient(135deg, rgba(246, 195, 67, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+  border: 1px solid rgba(246, 195, 67, 0.25);
+  border-radius: 0 14px 14px 14px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.875rem;
+  color: #e2e8f0;
+  line-height: 1.55;
+  animation: popIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Package 3 · AIWorkspace Cinematic ─────────────────────────────── */
+
+/* Neural trace lane */
+.neural-lane {
+  position: relative;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+@keyframes neuralPulse {
+  0%   { left: -40%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { left: 110%; opacity: 0; }
+}
+
+.neural-dot {
+  position: absolute;
+  top: 0;
+  width: 40%;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--kapruka-red) 50%, transparent 100%);
+  animation: neuralPulse 1.6s ease-in-out infinite;
+}
+
+.neural-dot-gold {
+  background: linear-gradient(90deg, transparent 0%, var(--ai-gold) 50%, transparent 100%);
+  animation-delay: 0.4s;
+}
+.neural-dot-2 { animation-delay: 0.3s; }
+.neural-dot-3 { animation-delay: 0.7s; }
+.neural-dot-4 { animation-delay: 1.0s; }
+.neural-dot-5 { animation-delay: 1.3s; }
+
+/* Pipeline step slide-in */
+@keyframes stepSlideIn {
+  from { opacity: 0; transform: translateX(18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.pipeline-step-enter {
+  animation: stepSlideIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Ready particle burst */
+@keyframes particleBurst {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+.particle-burst-dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ai-gold);
+  animation: particleBurst 0.65s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Typewriter text for MCP events */
+@keyframes typewriterReveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0% 0 0); }
+}
+
+.typewriter-text {
+  display: inline-block;
+  animation: typewriterReveal 0.55s steps(30, end) both;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+/* ── Package 4 · Post-Checkout Cinematic ────────────────────────────── */
+
+/* Confetti particle */
+@keyframes confettiFloat {
+  0%   { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate(var(--cx), var(--cy)) rotate(var(--cr)) scale(0.3); opacity: 0; }
+}
+
+.confetti-particle {
+  position: absolute;
+  font-size: 1.4rem;
+  line-height: 1;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+  animation: confettiFloat 1.1s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  z-index: 10;
+}
+
+/* Animated checkmark draw */
+@keyframes checkDraw {
+  from { stroke-dashoffset: 60; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.check-draw {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: checkDraw 0.55s ease-out 0.2s forwards;
+}
+
+/* Order number typewriter */
+@keyframes orderTypewriter {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+.order-typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: orderTypewriter 0.7s steps(12, end) 0.4s both;
+  display: inline-block;
+}
+
+/* Delivery tracker */
+.tracker-timeline {
+  position: relative;
+  padding-left: 1.75rem;
+}
+
+.tracker-timeline::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  width: 2px;
+  background: linear-gradient(to bottom, #22c55e, rgba(255,255,255,0.1));
+  border-radius: 2px;
+}
+
+.tracker-step {
+  position: relative;
+  padding: 0.6rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.tracker-dot {
+  position: absolute;
+  left: -1.75rem;
+  top: 0.85rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.2);
+  transform: translateX(-1px);
+  transition: all 0.35s ease;
+  flex-shrink: 0;
+}
+
+.tracker-dot-done {
+  background: #22c55e;
+  border-color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.tracker-dot-active {
+  background: var(--ai-gold);
+  border-color: var(--ai-gold);
+  box-shadow: 0 0 0 4px rgba(246, 195, 67, 0.25);
+}
+
+@keyframes trackerLivePulse {
+  0%, 100% { box-shadow: 0 0 0 0px rgba(246,195,67,0.5), 0 0 8px rgba(246,195,67,0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(246,195,67,0), 0 0 16px rgba(246,195,67,0.5); }
+}
+
+.tracker-dot-live {
+  animation: trackerLivePulse 1.4s ease infinite;
+}
+
+.tracker-step-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  transition: color 0.3s;
+}
+
+.tracker-step-label-done { color: #86efac; }
+.tracker-step-label-active { color: #fde68a; font-weight: 700; }
+
+.tracker-step-time {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.1rem;
+}
+
+.tracker-step-time-active { color: #f6c343; }
+
+@keyframes trackerStepIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.tracker-step-enter {
+  animation: trackerStepIn 0.35s ease both;
+}
+
+/* Floating labels */
+.float-label-group {
+  position: relative;
+}
+
+.float-label-group input,
+.float-label-group textarea {
+  padding-top: 1.4rem;
+  padding-bottom: 0.5rem;
+}
+
+.float-label-group label {
+  position: absolute;
+  left: 0.85rem;
+  top: 0.9rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  pointer-events: none;
+  transition: top 0.18s ease, font-size 0.18s ease, color 0.18s ease;
+  z-index: 1;
+}
+
+.float-label-group input:focus ~ label,
+.float-label-group input:not(:placeholder-shown) ~ label,
+.float-label-group textarea:focus ~ label,
+.float-label-group textarea:not(:placeholder-shown) ~ label {
+  top: 0.3rem;
+  font-size: 0.65rem;
+  color: var(--ai-gold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Gift card preview */
+@keyframes giftCardReveal {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.gift-card-preview {
+  background: linear-gradient(135deg, #1a0f3e 0%, #2d1b69 100%);
+  border: 1.5px solid rgba(246, 195, 67, 0.4);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  font-family: 'Georgia', serif;
+  color: #fde68a;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  position: relative;
+  overflow: hidden;
+  animation: giftCardReveal 0.3s ease both;
+}
+
+.gift-card-preview::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(246,195,67,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Smart delivery ETA pill */
+.delivery-eta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  animation: popIn 0.3s ease both;
+}
+
+.delivery-eta-same { background: rgba(34,197,94,0.15); color: #15803d; border: 1px solid rgba(34,197,94,0.3); }
+.delivery-eta-next { background: rgba(59,130,246,0.12); color: #1d4ed8; border: 1px solid rgba(59,130,246,0.25); }
+.delivery-eta-scheduled { background: rgba(107,114,128,0.1); color: #4b5563; border: 1px solid rgba(107,114,128,0.2); }
+
+/* Checkout section reveal */
+@keyframes sectionReveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.checkout-section-1 { animation: sectionReveal 0.4s ease 0.05s both; }
+.checkout-section-2 { animation: sectionReveal 0.4s ease 0.17s both; }
+.checkout-section-3 { animation: sectionReveal 0.4s ease 0.29s both; }
+
+/* Share card */
+.share-card {
+  background: linear-gradient(135deg, rgba(246,195,67,0.08) 0%, rgba(255,255,255,0.02) 100%);
+  border: 1px solid rgba(246,195,67,0.25);
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  animation: popIn 0.4s ease 0.6s both;
+}
+
+/* ── Package 5 · Hero Cinematic ─────────────────────────────────────── */
+
+/* Ambient floating particle */
+@keyframes ambientFloat {
+  0%   { transform: translate(0, 0) scale(1);   opacity: var(--ao); }
+  33%  { transform: translate(var(--ax), calc(var(--ay) * 0.5)) scale(1.1); opacity: calc(var(--ao) * 1.4); }
+  66%  { transform: translate(calc(var(--ax) * 0.6), var(--ay)) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1);   opacity: var(--ao); }
+}
+
+.ambient-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: ambientFloat var(--ad) ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Ruka avatar 3D entrance */
+@keyframes avatarFlipIn {
+  from { opacity: 0; transform: rotateY(90deg) scale(0.8); }
+  60%  { transform: rotateY(-8deg) scale(1.04); }
+  to   { opacity: 1; transform: rotateY(0deg) scale(1); }
+}
+
+.avatar-flip-in {
+  animation: avatarFlipIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-style: preserve-3d;
+  perspective: 600px;
+}
+
+/* Placeholder crossfade */
+@keyframes placeholderFade {
+  0%, 18%  { opacity: 1; transform: translateY(0); }
+  22%, 96% { opacity: 0; transform: translateY(-4px); }
+  100%     { opacity: 1; transform: translateY(0); }
+}
+
+/* Chip ghost trail on hover (pure CSS: box-shadow layers) */
+@media (hover: hover) {
+  .flow-chip:hover {
+    box-shadow:
+      var(--shadow-card),
+      8px 0 0 -2px rgba(216, 0, 0, 0.06),
+      16px 0 0 -4px rgba(216, 0, 0, 0.03);
+  }
+}
+
+/* ── Package 6 · Global Polish ──────────────────────────────────────── */
+
+/* Page cross-fade transition */
+@keyframes pageFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: pageFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* New Flow button shine sweep */
+.new-flow-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.new-flow-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+  background-size: 220% 100%;
+  animation: shimmerSweep 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Sliding plan tab underline */
+.plan-tab-bar {
+  position: relative;
+}
+
+.plan-tab-underline {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--kapruka-red);
+  transition: left 0.3s cubic-bezier(0.22, 1, 0.36, 1), width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Reduce-motion overrides ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .card-waterfall,
+  .ai-pick-badge,
+  .ruka-pulse-ring,
+  .typing-dot,
+  .quick-reply-chip:hover,
+  .ruka-greeting-bubble,
+  .neural-dot,
+  .pipeline-step-enter,
+  .particle-burst-dot,
+  .typewriter-text,
+  .confetti-particle,
+  .check-draw,
+  .order-typewriter,
+  .tracker-dot-live,
+  .tracker-step-enter,
+  .checkout-section-1,
+  .checkout-section-2,
+  .checkout-section-3,
+  .share-card,
+  .gift-card-preview,
+  .ambient-particle,
+  .avatar-flip-in,
+  .page-enter,
+  .new-flow-btn::after,
+  .product-card-premium:hover {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
