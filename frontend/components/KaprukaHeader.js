@@ -96,10 +96,10 @@ export default function KaprukaHeader({
             <button
               type="button"
               onClick={() => setCategoriesOpen((o) => !o)}
-              className={`flex items-center justify-center w-11 h-11 rounded-xl transition-all border ${
+              className={`flex items-center justify-center w-11 h-11 rounded-full transition-all border ${
                 categoriesOpen
-                  ? "bg-[#D80000] border-[#D80000] text-white shadow-[0_0_15px_rgba(216,0,0,0.4)]"
-                  : "bg-white/5 border-white/8 text-slate-300 hover:bg-white/10 hover:text-white"
+                  ? "bg-[#D80000] border-[#D80000] text-white shadow-[0_0_15px_rgba(216,0,0,0.4)] animate-pulse"
+                  : "bg-white/5 border-white/8 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/15"
               }`}
               aria-label={categoryLabel}
               title={categoryLabel}
@@ -151,7 +151,7 @@ export default function KaprukaHeader({
           {/* Search */}
           <form
             onSubmit={handleSearch}
-            className={`flex flex-1 min-w-0 max-w-2xl mx-auto h-11 items-stretch rounded-xl border transition-all duration-300 ${
+            className={`flex flex-1 min-w-0 max-w-2xl mx-auto h-11 items-stretch rounded-full border transition-all duration-300 ${
               searchFocused
                 ? "border-red-500/50 bg-white/10 shadow-[0_0_15px_rgba(239,68,68,0.15)] text-white"
                 : "border-white/8 bg-white/4 hover:border-white/15 hover:bg-white/6"
@@ -171,7 +171,7 @@ export default function KaprukaHeader({
             />
             <button
               type="submit"
-              className="shrink-0 px-6 m-1 rounded-lg bg-[#D80000] hover:bg-[#F21A1A] text-white text-sm font-bold transition-all duration-200 flex items-center gap-2 shadow-[0_4px_12px_rgba(216,0,0,0.2)] hover:shadow-[0_4px_16px_rgba(216,0,0,0.3)] hover:-translate-y-[1px] active:translate-y-0"
+              className="shrink-0 px-6 m-1 rounded-full bg-[#D80000] hover:bg-[#F21A1A] text-white text-sm font-bold transition-all duration-200 flex items-center gap-2 shadow-[0_4px_12px_rgba(216,0,0,0.2)] hover:shadow-[0_4px_16px_rgba(216,0,0,0.3)] hover:-translate-y-[1px] active:translate-y-0"
             >
               <SearchIcon className="w-4 h-4 sm:hidden" />
               <span className="hidden sm:inline">{s.search_btn || "Search"}</span>
@@ -184,7 +184,7 @@ export default function KaprukaHeader({
               <button
                 type="button"
                 onClick={onNewFlow}
-                className="flex items-center justify-center h-11 px-4 bg-gradient-to-r from-red-600/10 to-red-600/5 hover:from-red-600/20 hover:to-red-600/10 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-xl transition-all font-bold text-sm sm:text-base gap-2 shadow-[0_0_12px_rgba(216,0,0,0.05)] hover:shadow-[0_0_16px_rgba(216,0,0,0.1)] group"
+                className="flex items-center justify-center h-11 px-4 bg-gradient-to-r from-red-600/10 to-red-600/5 hover:from-red-600/20 hover:to-red-600/10 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-full transition-all font-bold text-sm sm:text-base gap-2 shadow-[0_0_12px_rgba(216,0,0,0.05)] hover:shadow-[0_0_16px_rgba(216,0,0,0.1)] group"
                 title={s.new_flow || "Start New Flow"}
               >
                 <svg className="w-4 h-4 transition-transform duration-500 group-hover:rotate-180 text-red-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -194,35 +194,38 @@ export default function KaprukaHeader({
               </button>
             )}
 
-            <div className="hidden md:flex items-center bg-white/5 border border-white/8 rounded-xl p-1 h-11">
+            <div className="hidden md:flex items-center bg-white/5 border border-white/8 rounded-full p-1 h-11">
               {[
                 { code: "en-US", label: "EN" },
                 { code: "si-LK", label: "සිං" },
                 { code: "en-LK", label: "Tang" }
-              ].map((lang) => (
-                <button
-                  key={lang.code}
-                  type="button"
-                  onClick={() => onLanguageChange(lang.code)}
-                  className={`h-8 px-3.5 text-xs font-black rounded-lg transition-all flex items-center justify-center ${
-                    currentLanguage === lang.code
-                      ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-[0_2px_8px_rgba(216,0,0,0.4)]"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                  }`}
-                >
-                  {lang.label}
-                </button>
-              ))}
+              ].map((lang) => {
+                const isActive = currentLanguage === lang.code;
+                return (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => onLanguageChange(lang.code)}
+                    className={`h-8 px-4 text-xs font-bold rounded-full transition-all duration-300 flex items-center justify-center ${
+                      isActive
+                        ? "bg-[#D80000] text-white shadow-[0_2px_8px_rgba(216,0,0,0.4)]"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                    }`}
+                  >
+                    {lang.label}
+                  </button>
+                );
+              })}
             </div>
 
             {user ? (
               <button
                 type="button"
                 onClick={onProfileClick}
-                className="hidden sm:flex flex-col items-start px-3 py-1.5 rounded-xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all max-w-[160px] lg:max-w-[200px]"
+                className="hidden sm:flex flex-col items-start px-4 py-1 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all max-w-[160px] lg:max-w-[200px]"
               >
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.account_label || "Account"}</span>
-                <span className="text-sm font-bold text-slate-200 leading-tight truncate w-full text-left mt-0.5">
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.account_label || "Account"}</span>
+                <span className="text-xs font-bold text-slate-200 leading-tight truncate w-full text-left mt-0.5">
                   {user.name || user.email}
                 </span>
               </button>
@@ -230,17 +233,17 @@ export default function KaprukaHeader({
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="hidden sm:flex flex-col items-start px-4 py-1.5 rounded-xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
+                className="hidden sm:flex flex-col items-start px-4 py-1.5 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
               >
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.hello_label || "Hello"}</span>
-                <span className="text-sm font-bold text-slate-200 leading-tight mt-0.5">{s.login}</span>
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.hello_label || "Hello"}</span>
+                <span className="text-xs font-bold text-slate-200 leading-tight mt-0.5">{s.login}</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={onCartClick}
-              className="relative flex items-center gap-3 pl-3 pr-4 h-11 rounded-xl bg-white/5 border border-white/8 hover:bg-white/10 hover:border-white/15 transition-all group"
+              className="relative flex items-center gap-3 pl-3 pr-4 h-11 rounded-full bg-white/5 border border-white/8 hover:bg-white/10 hover:border-white/15 hover:shadow-[0_0_15px_rgba(216,0,0,0.2)] transition-all group"
               title={s.active_crate}
             >
               <div className="relative text-red-500 transition-transform group-hover:scale-105">
@@ -252,8 +255,8 @@ export default function KaprukaHeader({
                 )}
               </div>
               <div className="hidden md:flex flex-col items-start text-left">
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.active_crate}</span>
-                <span className="text-sm font-bold text-slate-200 leading-none mt-0.5">
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.active_crate}</span>
+                <span className="text-xs font-bold text-slate-200 leading-none mt-0.5">
                   {cartCount} {cartCount === 1 ? (s.cart_item_singular || "item") : (s.cart_item_plural || "items")}
                 </span>
               </div>

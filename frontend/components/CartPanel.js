@@ -521,7 +521,7 @@ export default function CartPanel({
 
         {/* Crate Evolution Timeline */}
         {!demoCompact && evolution.length > 0 && (
-          <div className="flow-card p-6 space-y-3 border-l-4 border-kapruka-gold">
+          <div className="flow-card p-6 space-y-3 border-l-4 border-[#F6C343]">
             <div>
               <h3 className="text-base font-bold text-flow-text whitespace-nowrap inline-flex items-center gap-2">
                 <Icon3D name="bolt" size={16} tilt />
@@ -531,9 +531,32 @@ export default function CartPanel({
                 {activeStrings.rollback_note || "* Click any past step to rollback selections and settings to that snapshot."}
               </p>
             </div>
-            <div className="space-y-3 relative pl-6 border-l-2 border-white/10 max-h-60 overflow-y-auto">
+            <div className="space-y-4 relative pl-6 border-l-2 border-white/10 max-h-[340px] overflow-y-auto mt-2">
               {evolution.map((step, idx) => {
                 const isActiveStep = idx === evolution.length - 1;
+                const stepActive = (step && step.active_version) || "initial";
+                const stepItems = (step && step.cart_versions?.[stepActive]) || [];
+                const stepBudget = (step && step.budget_limit) ?? 25000.0;
+                
+                const stepTotal = stepItems.reduce((sum, item) => {
+                  const amt = typeof item.price === "number" ? item.price : item.price?.amount || 0;
+                  return sum + (amt * (item.quantity || 1));
+                }, 0);
+                
+                const stepLang = step && step.current_language === "si-LK" 
+                  ? "සිං" 
+                  : step && step.current_language === "en-LK" 
+                    ? "Tang" 
+                    : "EN";
+
+                const stepPlanLabel = stepActive === "initial" 
+                  ? activeStrings.ideal_plan || "Ideal"
+                  : stepActive === "cheaper"
+                    ? activeStrings.cheaper || "Cheaper"
+                    : stepActive === "premium"
+                      ? activeStrings.premium || "Premium"
+                      : activeStrings.fast_delivery || "Fast";
+
                 return (
                   <div 
                     key={idx} 
@@ -552,12 +575,47 @@ export default function CartPanel({
                         : "-left-[31px] w-3 h-3 bg-[#090d16] border-slate-600 group-hover:border-red-500 group-hover:bg-[#D80000]"
                     }`}></div>
                     
-                    <div className={`text-label ${isActiveStep ? "text-[#F6C343] font-bold" : "group-hover:text-red-400"}`}>
-                      Step {idx + 1} {isActiveStep && " (Current)"}
+                    <div className="flex items-center justify-between">
+                      <div className={`text-label ${isActiveStep ? "text-[#F6C343] font-bold" : "group-hover:text-red-400 text-slate-500"}`}>
+                        Step {idx + 1} {isActiveStep && " (Current)"}
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-mono">
+                        {stepPlanLabel} · LKR {stepBudget.toLocaleString()} · {stepLang}
+                      </div>
                     </div>
-                    <div className={`text-base leading-snug mt-0.5 ${isActiveStep ? "text-white font-semibold" : "text-slate-300"}`}>
-                      {(step && step.label) || step || "Crate Curation Updated"}
+                    
+                    <div className={`text-sm leading-snug mt-1 ${isActiveStep ? "text-white font-bold" : "text-slate-300"}`}>
+                      {(step && step.label) || "Crate Curation Updated"}
                     </div>
+
+                    <div className="text-xs text-slate-400 mt-1 flex items-center justify-between">
+                      <span>Spent: Rs {stepTotal.toLocaleString()}</span>
+                      <span>{stepItems.length} items</span>
+                    </div>
+
+                    {stepItems.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-white/5">
+                        {stepItems.map((item, i) => (
+                          <div 
+                            key={item.id || i} 
+                            className="relative group/thumb flex items-center justify-center w-7 h-7 rounded bg-white/5 border border-white/8 overflow-hidden" 
+                            title={`${item.name} (${item.quantity || 1}×)`}
+                          >
+                            {item.image_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px]">{item.category_emoji || "📦"}</span>
+                            )}
+                            {(item.quantity || 1) > 1 && (
+                              <span className="absolute bottom-0 right-0 bg-red-600 text-white text-[8px] px-1 rounded-tl font-bold leading-none scale-90">
+                                {item.quantity}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}

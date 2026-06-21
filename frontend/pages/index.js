@@ -503,6 +503,39 @@ export default function Home() {
     }
   }
 
+  const FRONTEND_FALLBACK_PRODUCTS = [
+    {
+      id: "FE-FALLBACK-CHOC",
+      name: "Premium Assorted Chocolates Pack",
+      price: { amount: 2850, currency: "LKR" },
+      image_url: "https://www.kapruka.com/images/chocolates/choc_box.jpg",
+      category: "Chocolates",
+      category_emoji: "🍫",
+      in_stock: true,
+      delivery_speed: "Standard"
+    },
+    {
+      id: "FE-FALLBACK-FLOWERS",
+      name: "Fresh Red Roses Elegant Bouquet",
+      price: { amount: 3500, currency: "LKR" },
+      image_url: "https://www.kapruka.com/images/flowers/roses.jpg",
+      category: "Flowers",
+      category_emoji: "🌹",
+      in_stock: true,
+      delivery_speed: "Standard"
+    },
+    {
+      id: "FE-FALLBACK-CAKE",
+      name: "Classic Ribbon Celebration Cake (1kg)",
+      price: { amount: 4200, currency: "LKR" },
+      image_url: "https://www.kapruka.com/images/cakes/ribbon_cake.jpg",
+      category: "Cakes",
+      category_emoji: "🎂",
+      in_stock: true,
+      delivery_speed: "Standard"
+    }
+  ];
+
   // Conversational refine: interpret a free-text follow-up and dispatch it
   // against existing handlers / MCP endpoints, then have Ruka reply.
   async function handleRefine(text) {
@@ -578,51 +611,76 @@ export default function Home() {
         } else if (action.type === "add") {
           let added = null;
           try {
+            const current = workingVersions[workingActive] ?? [];
             const res = await fetch(`/api/search?q=${encodeURIComponent(action.query)}`);
             if (res.ok) {
               const data = await res.json();
-              const current = workingVersions[workingActive] ?? [];
               added = (data.results || []).find(
                 (p) =>
                   p.in_stock !== false &&
                   (p.price?.amount ?? p.price ?? 0) > 0 &&
                   !current.some((it) => String(it.id) === String(p.id))
               );
-              if (added) {
+            }
+
+            // Local fallback 1: Search in local catalog cache
+            if (!added) {
+              const qLower = action.query.toLowerCase();
+              added = catalog.find(
+                (p) =>
+                  p.in_stock !== false &&
+                  (p.price?.amount ?? p.price ?? 0) > 0 &&
+                  !current.some((it) => String(it.id) === String(p.id)) &&
+                  ((p.name || "").toLowerCase().includes(qLower) ||
+                   (p.category || "").toLowerCase().includes(qLower))
+              );
+            }
+
+            // Local fallback 2: Check matching static frontend fallbacks
+            if (!added) {
+              const qLower = action.query.toLowerCase();
+              added = FRONTEND_FALLBACK_PRODUCTS.find(
+                (p) =>
+                  !current.some((it) => String(it.id) === String(p.id)) &&
+                  ((p.name || "").toLowerCase().includes(qLower) ||
+                   (p.category || "").toLowerCase().includes(qLower))
+              );
+            }
+
+            if (added) {
+              workingVersions = {
+                ...workingVersions,
+                [workingActive]: [
+                  ...current,
+                  { ...added, quantity: 1, reason: `Added via chat: ${action.query}` },
+                ],
+              };
+              cartTouched = true;
+            } else {
+              // Suffix / name match fallback to increment quantity of existing item
+              const qLower = action.query.toLowerCase();
+              const matchingIdx = current.findIndex(
+                (it) =>
+                  (it.name || "").toLowerCase().includes(qLower) ||
+                  qLower.includes((it.name || "").toLowerCase()) ||
+                  (it.category || "").toLowerCase().includes(qLower) ||
+                  qLower.includes((it.category || "").toLowerCase())
+              );
+              if (matchingIdx !== -1) {
+                const targetItem = current[matchingIdx];
+                const newQty = (targetItem.quantity || 1) + 1;
+                const updatedItems = [...current];
+                updatedItems[matchingIdx] = {
+                  ...targetItem,
+                  quantity: newQty,
+                  reason: `Increased quantity via chat: ${action.query}`
+                };
                 workingVersions = {
                   ...workingVersions,
-                  [workingActive]: [
-                    ...current,
-                    { ...added, quantity: 1, reason: `Added via chat: ${action.query}` },
-                  ],
+                  [workingActive]: updatedItems
                 };
                 cartTouched = true;
-              } else {
-                // Suffix / name match fallback to increment quantity of existing item
-                const qLower = action.query.toLowerCase();
-                const matchingIdx = current.findIndex(
-                  (it) =>
-                    (it.name || "").toLowerCase().includes(qLower) ||
-                    qLower.includes((it.name || "").toLowerCase()) ||
-                    (it.category || "").toLowerCase().includes(qLower) ||
-                    qLower.includes((it.category || "").toLowerCase())
-                );
-                if (matchingIdx !== -1) {
-                  const targetItem = current[matchingIdx];
-                  const newQty = (targetItem.quantity || 1) + 1;
-                  const updatedItems = [...current];
-                  updatedItems[matchingIdx] = {
-                    ...targetItem,
-                    quantity: newQty,
-                    reason: `Increased quantity via chat: ${action.query}`
-                  };
-                  workingVersions = {
-                    ...workingVersions,
-                    [workingActive]: updatedItems
-                  };
-                  cartTouched = true;
-                  added = { name: `${targetItem.name} (qty: ${newQty})` };
-                }
+                added = { name: `${targetItem.name} (qty: ${newQty})` };
               }
             }
           } catch (e) {
@@ -694,30 +752,32 @@ export default function Home() {
       }
 
       // Single commit for all cart/metadata changes.
-      if (cartTouched || Object.keys(metaPatch).length > 0 || workingActive !== activeVersion) {
+      const metadataChanged = Object.keys(metaPatch).length > 0 || workingBudget !== (metadata.budget_limit ?? 25000.0);
+      const activeVersionChanged = workingActive !== activeVersion;
+
+      if (cartTouched || metadataChanged || activeVersionChanged) {
         if (cartTouched) setCartVersions(workingVersions);
-        if (workingActive !== activeVersion) setActiveVersion(workingActive);
+        if (activeVersionChanged) setActiveVersion(workingActive);
         setMetadata((prev) => ({ ...prev, ...metaPatch, budget_limit: workingBudget }));
 
-        if (cartTouched) {
-          const newStep = {
-            label: `Chat refine: ${text}`,
-            cart_versions: workingVersions,
-            active_version: workingActive,
-            budget_limit: workingBudget,
-            last_prompt: lastPrompt,
-            current_language: currentLanguage,
-          };
-          setEvolution((prev) => {
-            const updated = [...prev, newStep];
-            if (sessionId) {
-              saveEvolutionToDB(sessionId, updated, workingVersions);
-              localStorage.setItem("kapruka_flow_cart_versions", JSON.stringify(workingVersions));
-              localStorage.setItem("kapruka_flow_evolution", JSON.stringify(updated));
-            }
-            return updated;
-          });
-        }
+        // Add to evolution timeline for any conversational change
+        const newStep = {
+          label: `Chat refine: ${text}`,
+          cart_versions: workingVersions,
+          active_version: workingActive,
+          budget_limit: workingBudget,
+          last_prompt: lastPrompt,
+          current_language: currentLanguage,
+        };
+        setEvolution((prev) => {
+          const updated = [...prev, newStep];
+          if (sessionId) {
+            saveEvolutionToDB(sessionId, updated, workingVersions);
+            localStorage.setItem("kapruka_flow_cart_versions", JSON.stringify(workingVersions));
+            localStorage.setItem("kapruka_flow_evolution", JSON.stringify(updated));
+          }
+          return updated;
+        });
       }
     } finally {
       setChatBusy(false);
