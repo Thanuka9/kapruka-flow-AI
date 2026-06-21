@@ -108,6 +108,11 @@ export function interpretRefineMessage(rawText) {
     actions.push({ type: "reorder" });
   }
 
+  // Rebuild / restart flow.
+  if (/\b(rebuild|restart|start over|refresh)\b/.test(lower)) {
+    actions.push({ type: "rebuild" });
+  }
+
   // Item removal / addition last so they survive any budget rebuild above.
   if (hasRemove) {
     const q = extractAfter(lower, ["remove", "delete", "drop", "without"]);

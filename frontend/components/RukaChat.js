@@ -52,19 +52,19 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
     const occ = String(intent.occasion).replace(/_/g, " ");
     suggestions.push({
       icon: "🎀",
-      text: `Add a gift wrapping note for the ${occ}`,
+      text: "make it a gift",
       label: `Gift wrap for ${occ}`,
     });
   }
 
   if (!cats.includes("chocolate")) {
-    suggestions.push({ icon: "🍫", text: "Add a premium chocolate box", label: "Add chocolates" });
+    suggestions.push({ icon: "🍫", text: "add chocolates", label: "Add chocolates" });
   }
   if (!cats.includes("flowers")) {
-    suggestions.push({ icon: "🌹", text: "Add fresh flowers to the cart", label: "Add flowers" });
+    suggestions.push({ icon: "🌹", text: "add flowers", label: "Add flowers" });
   }
   if (!cats.includes("cake")) {
-    suggestions.push({ icon: "🎂", text: "Add a birthday cake", label: "Add a cake" });
+    suggestions.push({ icon: "🎂", text: "add cake", label: "Add a cake" });
   }
 
   // Budget suggestions
@@ -81,10 +81,13 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
 
   // Delivery
   suggestions.push({ icon: "⚡", text: "Switch to same-day delivery", label: "Same-day delivery" });
-  suggestions.push({ icon: "🏙", text: "Change the delivery city", label: "Change city" });
+  
+  const currentCity = metadata?.delivery_city || "Colombo 01";
+  const nextCity = currentCity.toLowerCase().includes("galle") ? "Colombo" : "Galle";
+  suggestions.push({ icon: "🏙", text: `deliver to ${nextCity}`, label: `Ship to ${nextCity}` });
 
   // Always available
-  suggestions.push({ icon: "🔁", text: "Rebuild the cart from scratch", label: "Rebuild cart" });
+  suggestions.push({ icon: "🔁", text: "rebuild this cart", label: "Rebuild cart" });
 
   return suggestions.slice(0, 4);
 }

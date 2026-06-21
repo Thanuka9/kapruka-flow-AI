@@ -678,6 +678,11 @@ export default function Home() {
           setChatBusy(false);
           handleStartBuild(q, currentLanguage, metadata.budget_limit);
           return;
+        } else if (action.type === "rebuild") {
+          pushAgent(s.chat_reply_rebuild || "Rebuilding your curated cart...");
+          setChatBusy(false);
+          handleStartBuild(lastPrompt || "gifts", currentLanguage, metadata.budget_limit);
+          return;
         } else if (action.type === "research") {
           pushAgent(s.chat_reply_researching);
           setChatBusy(false);

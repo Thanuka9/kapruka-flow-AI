@@ -76,7 +76,7 @@ export default function KaprukaHeader({
   return (
     <header className="kapruka-site-header sticky top-0 z-50 w-full">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2 lg:gap-3 min-h-[56px] py-1.5">
+        <div className="flex items-center gap-3 lg:gap-4 min-h-[64px] py-2">
           {/* Logo */}
           <button
             type="button"
@@ -86,7 +86,7 @@ export default function KaprukaHeader({
             <span className="font-black text-xl tracking-tight text-[#D80000] leading-none">
               KAPRUKA
             </span>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-white bg-[#D80000] px-2 py-0.5 rounded-md">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white bg-gradient-to-r from-red-600 to-red-800 px-2 py-0.5 rounded-md shadow-[0_2px_8px_rgba(216,0,0,0.3)]">
               Flow
             </span>
           </button>
@@ -96,8 +96,10 @@ export default function KaprukaHeader({
             <button
               type="button"
               onClick={() => setCategoriesOpen((o) => !o)}
-              className={`kapruka-cat-btn flex items-center justify-center w-11 h-11 rounded-xl transition-all ${
-                categoriesOpen ? "bg-[#D80000] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              className={`flex items-center justify-center w-11 h-11 rounded-xl transition-all border ${
+                categoriesOpen
+                  ? "bg-[#D80000] border-[#D80000] text-white shadow-[0_0_15px_rgba(216,0,0,0.4)]"
+                  : "bg-white/5 border-white/8 text-slate-300 hover:bg-white/10 hover:text-white"
               }`}
               aria-label={categoryLabel}
               title={categoryLabel}
@@ -114,22 +116,22 @@ export default function KaprukaHeader({
                   onClick={() => setCategoriesOpen(false)}
                   aria-hidden
                 />
-                <div className="fixed left-0 top-0 bottom-0 z-50 w-[min(92vw,380px)] overflow-y-auto bg-white border-r border-gray-200 shadow-2xl sm:top-[68px] sm:bottom-auto sm:max-h-[min(80vh,560px)] sm:rounded-r-2xl">
-                  <div className="sticky top-0 px-5 py-4 bg-white border-b border-gray-100 flex items-center justify-between">
-                    <span className="text-base font-bold text-gray-800">
+                <div className="fixed left-0 top-0 bottom-0 z-50 w-[min(92vw,380px)] overflow-y-auto bg-[#0f172a] border-r border-white/8 shadow-2xl sm:top-[68px] sm:bottom-auto sm:max-h-[min(80vh,560px)] sm:rounded-r-2xl">
+                  <div className="sticky top-0 px-5 py-4 bg-[#0f172a] border-b border-white/8 flex items-center justify-between">
+                    <span className="text-base font-bold text-white">
                       {s.browse_categories || "Categories"}
                     </span>
-                    <button type="button" onClick={() => setCategoriesOpen(false)} className="text-gray-400 hover:text-gray-700 font-bold px-2">✕</button>
+                    <button type="button" onClick={() => setCategoriesOpen(false)} className="text-slate-400 hover:text-white font-bold px-2">✕</button>
                   </div>
                   <div className="p-3 grid grid-cols-1 gap-0.5">
                     {(categories || []).length === 0 ? (
-                      <p className="py-8 text-center text-base text-gray-400">{s.loading || "Loading…"}</p>
+                      <p className="py-8 text-center text-base text-slate-500">{s.loading || "Loading…"}</p>
                     ) : (
                       categories.map((cat, idx) => (
                         <button
                           key={cat.url || cat.name || idx}
                           type="button"
-                          className="text-left px-4 py-3 text-base text-gray-800 hover:bg-red-50 hover:text-[#D80000] rounded-xl flex items-center gap-3 transition-colors"
+                          className="text-left px-4 py-3 text-base text-slate-200 hover:bg-white/5 hover:text-[#D80000] rounded-xl flex items-center gap-3 transition-colors"
                           onClick={() => {
                             setCategoriesOpen(false);
                             onCategorySelect(cat.name);
@@ -149,13 +151,13 @@ export default function KaprukaHeader({
           {/* Search */}
           <form
             onSubmit={handleSearch}
-            className={`kapruka-search flex flex-1 min-w-0 max-w-2xl mx-auto h-11 items-stretch rounded-full border transition-all duration-200 ${
+            className={`flex flex-1 min-w-0 max-w-2xl mx-auto h-11 items-stretch rounded-xl border transition-all duration-300 ${
               searchFocused
-                ? "border-[#D80000] bg-white shadow-[0_0_0_3px_rgba(199,1,1,0.12)]"
-                : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-white"
+                ? "border-red-500/50 bg-white/10 shadow-[0_0_15px_rgba(239,68,68,0.15)] text-white"
+                : "border-white/8 bg-white/4 hover:border-white/15 hover:bg-white/6"
             }`}
           >
-            <div className="flex items-center pl-4 text-gray-400 pointer-events-none">
+            <div className="flex items-center pl-4 text-slate-400 pointer-events-none">
               <SearchIcon className="w-5 h-5" />
             </div>
             <input
@@ -165,50 +167,59 @@ export default function KaprukaHeader({
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               placeholder={s.search_placeholder}
-              className="flex-1 min-w-0 px-3 bg-transparent text-base text-gray-900 placeholder:text-gray-500 placeholder:font-medium focus:outline-none"
+              className="flex-1 min-w-0 px-3 bg-transparent text-base text-slate-100 placeholder:text-slate-500 focus:outline-none"
             />
             <button
               type="submit"
-              className="shrink-0 px-5 sm:px-7 m-1 rounded-full bg-[#D80000] hover:bg-[#B50000] text-white text-base font-bold transition-colors flex items-center gap-2"
+              className="shrink-0 px-6 m-1 rounded-lg bg-[#D80000] hover:bg-[#F21A1A] text-white text-sm font-bold transition-all duration-200 flex items-center gap-2 shadow-[0_4px_12px_rgba(216,0,0,0.2)] hover:shadow-[0_4px_16px_rgba(216,0,0,0.3)] hover:-translate-y-[1px] active:translate-y-0"
             >
               <SearchIcon className="w-4 h-4 sm:hidden" />
               <span className="hidden sm:inline">{s.search_btn || "Search"}</span>
             </button>
           </form>
 
-          {/* Right actions — Amazon-style stacked labels */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Right actions */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {showNewFlow && (
               <button
                 type="button"
                 onClick={onNewFlow}
-                className="new-flow-btn kapruka-nav-btn flex items-center justify-center h-11 px-3 sm:px-4 bg-gray-50 border border-gray-200 hover:border-[#D80000]/30 hover:bg-red-50 text-[#D80000] rounded-xl transition-all font-bold text-sm sm:text-base gap-1.5"
+                className="flex items-center justify-center h-11 px-4 bg-gradient-to-r from-red-600/10 to-red-600/5 hover:from-red-600/20 hover:to-red-600/10 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-xl transition-all font-bold text-sm sm:text-base gap-2 shadow-[0_0_12px_rgba(216,0,0,0.05)] hover:shadow-[0_0_16px_rgba(216,0,0,0.1)] group"
                 title={s.new_flow || "Start New Flow"}
               >
-                <span>🔄</span>
+                <svg className="w-4 h-4 transition-transform duration-500 group-hover:rotate-180 text-red-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
                 <span className="hidden sm:inline">{s.new_flow || "New Flow"}</span>
               </button>
             )}
 
-            <select
-              value={currentLanguage}
-              onChange={(e) => onLanguageChange(e.target.value)}
-              className="kapruka-nav-btn hidden md:block h-11 px-3 text-base font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D80000]/25"
-              aria-label="Language"
-            >
-              <option value="en-US">EN</option>
-              <option value="si-LK">සිං</option>
-              <option value="en-LK">Tanglish</option>
-            </select>
+            <div className="relative hidden md:block">
+              <select
+                value={currentLanguage}
+                onChange={(e) => onLanguageChange(e.target.value)}
+                className="appearance-none h-11 pl-4 pr-10 text-sm font-bold text-slate-300 bg-white/5 border border-white/8 rounded-xl hover:bg-white/10 hover:border-white/15 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D80000]/25 transition-all"
+                aria-label="Language"
+              >
+                <option value="en-US" className="bg-[#0f172a] text-slate-300">EN</option>
+                <option value="si-LK" className="bg-[#0f172a] text-slate-300">සිංහල</option>
+                <option value="en-LK" className="bg-[#0f172a] text-slate-300">Tanglish</option>
+              </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </div>
+            </div>
 
             {user ? (
               <button
                 type="button"
                 onClick={onProfileClick}
-                className="kapruka-nav-btn hidden sm:flex flex-col items-start px-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors max-w-[160px] lg:max-w-[200px]"
+                className="hidden sm:flex flex-col items-start px-3 py-1.5 rounded-xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all max-w-[160px] lg:max-w-[200px]"
               >
-                <span className="text-sm text-gray-500 leading-none">{s.account_label || "Account"}</span>
-                <span className="text-base font-bold text-gray-900 leading-tight truncate w-full text-left">
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.account_label || "Account"}</span>
+                <span className="text-sm font-bold text-slate-200 leading-tight truncate w-full text-left mt-0.5">
                   {user.name || user.email}
                 </span>
               </button>
@@ -216,30 +227,30 @@ export default function KaprukaHeader({
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="kapruka-nav-btn hidden sm:flex flex-col items-start px-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors"
+                className="hidden sm:flex flex-col items-start px-4 py-1.5 rounded-xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
               >
-                <span className="text-sm text-gray-500 leading-none">{s.hello_label || "Hello"}</span>
-                <span className="text-base font-bold text-gray-900 leading-tight">{s.login}</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.hello_label || "Hello"}</span>
+                <span className="text-sm font-bold text-slate-200 leading-tight mt-0.5">{s.login}</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={onCartClick}
-              className="kapruka-nav-btn relative flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors"
+              className="relative flex items-center gap-3 pl-3 pr-4 h-11 rounded-xl bg-white/5 border border-white/8 hover:bg-white/10 hover:border-white/15 transition-all group"
               title={s.active_crate}
             >
-              <div className="relative text-gray-800">
-                <Icon3D name="cart" size={30} tilt />
+              <div className="relative text-red-500 transition-transform group-hover:scale-105">
+                <CartIcon className="w-5 h-5 text-red-500" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[22px] h-[22px] flex items-center justify-center rounded-full bg-[#D80000] text-white text-sm font-bold px-1 animate-pop-in">
+                  <span className="absolute -top-2.5 -right-2.5 min-w-[20px] h-[20px] flex items-center justify-center rounded-full bg-[#D80000] text-white text-[10px] font-black px-1 shadow-[0_0_8px_rgba(216,0,0,0.6)] animate-pop-in">
                     {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}
               </div>
-              <div className="hidden md:flex flex-col items-start">
-                <span className="text-sm text-gray-500 leading-none">{s.active_crate}</span>
-                <span className="text-base font-bold text-gray-900 leading-tight">
+              <div className="hidden md:flex flex-col items-start text-left">
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.active_crate}</span>
+                <span className="text-sm font-bold text-slate-200 leading-none mt-0.5">
                   {cartCount} {cartCount === 1 ? (s.cart_item_singular || "item") : (s.cart_item_plural || "items")}
                 </span>
               </div>
