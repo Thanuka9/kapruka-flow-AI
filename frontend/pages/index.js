@@ -104,7 +104,7 @@ export default function Home() {
     } else {
       const savedSession = localStorage.getItem("kapruka_flow_session_id");
       if (savedSession) {
-        restoreSession(savedSession, { goToCart: true });
+        restoreSession(savedSession, { goToCart: false });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
