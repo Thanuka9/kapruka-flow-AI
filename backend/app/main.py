@@ -308,7 +308,6 @@ async def handle_intent(req: IntentRequest):
         )
 
 
-
 _active_checkouts = set()
 
 
@@ -345,9 +344,7 @@ async def handle_checkout(req: CheckoutRequest):
     # 2. Concurrency Lock
     lock_key = f"{req.session_id}:{req.cart_version}"
     if lock_key in _active_checkouts:
-        raise HTTPException(
-            status_code=409, detail="checkout_duplicate_prevented"
-        )
+        raise HTTPException(status_code=409, detail="checkout_duplicate_prevented")
     _active_checkouts.add(lock_key)
 
     try:
@@ -382,13 +379,15 @@ async def handle_checkout(req: CheckoutRequest):
             if delivery_date_dt.date() < datetime.now().date():
                 raise HTTPException(status_code=400, detail="checkout_date_past")
         except ValueError:
-            raise HTTPException(status_code=400, detail="delivery_date must be YYYY-MM-DD")
+            raise HTTPException(
+                status_code=400, detail="delivery_date must be YYYY-MM-DD"
+            )
 
         # 4. Server-side price & stock verification
         async def verify_product(p):
             raw_details = await call_mcp_tool_safe(
                 "kapruka_get_product",
-                {"params": {"product_id": p["id"], "response_format": "json"}}
+                {"params": {"product_id": p["id"], "response_format": "json"}},
             )
             if not raw_details:
                 return p, None
@@ -406,32 +405,38 @@ async def handle_checkout(req: CheckoutRequest):
         # Validate each product's price and stock
         for p, live_data in verification_results:
             db_price = safe_price_sum([p])
-            
+
             if not live_data:
                 # If remote details are completely unavailable, fallback in simulated mode, otherwise raise
                 if not ALLOW_SIMULATED_CHECKOUT:
-                    raise HTTPException(status_code=400, detail="checkout_item_unavailable")
+                    raise HTTPException(
+                        status_code=400, detail="checkout_item_unavailable"
+                    )
                 continue
-                
+
             # Check stock status
             in_stock = live_data.get("in_stock", True)
             if in_stock in (False, 0, "false", "False"):
                 raise HTTPException(status_code=400, detail="checkout_item_unavailable")
-                
+
             # Check price change (within 5% threshold)
             live_price = _get_price_from_raw(live_data)
             if db_price > 0:
                 price_ratio = live_price / db_price
                 if price_ratio < 0.95 or price_ratio > 1.05:
                     # Price changed significantly
-                    raise HTTPException(status_code=400, detail="checkout_price_changed")
+                    raise HTTPException(
+                        status_code=400, detail="checkout_price_changed"
+                    )
 
         # Verify delivery city using kapruka_check_delivery tool
         delivery_params = {
             "params": {
                 "city": req.delivery_city,
                 "delivery_date": req.delivery_date,
-                "product_id": products[0]["id"] if products else "EF_PC_GROC0V3441P00013",
+                "product_id": products[0]["id"]
+                if products
+                else "EF_PC_GROC0V3441P00013",
                 "response_format": "json",
             }
         }
@@ -441,10 +446,12 @@ async def handle_checkout(req: CheckoutRequest):
                 del_data = json.loads(del_res)
                 if "result" in del_data and isinstance(del_data["result"], dict):
                     del_data = del_data["result"]
-                
+
                 # If not available to this city/date
                 if del_data.get("available") in (False, 0, "false", "False"):
-                    raise HTTPException(status_code=400, detail="checkout_city_required")
+                    raise HTTPException(
+                        status_code=400, detail="checkout_city_required"
+                    )
             except HTTPException:
                 raise
             except Exception as e:
@@ -590,7 +597,9 @@ async def handle_checkout(req: CheckoutRequest):
                     }
 
         api_logger.error("MCP order creation failed for session %s", req.session_id)
-        log_analytics(req.session_id, "checkout_failed", {"cart_version": req.cart_version})
+        log_analytics(
+            req.session_id, "checkout_failed", {"cart_version": req.cart_version}
+        )
 
         if not ALLOW_SIMULATED_CHECKOUT:
             raise HTTPException(
@@ -599,9 +608,7 @@ async def handle_checkout(req: CheckoutRequest):
             )
 
         sim_order_id = "FLOW-SIM-" + str(uuid.uuid4())[:8]
-        sim_url = (
-            f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={sim_order_id}"
-        )
+        sim_url = f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={sim_order_id}"
         log_analytics(req.session_id, "checkout_fallback", {"order_id": sim_order_id})
         final_total = safe_price_sum(products) + 300
         save_order(
