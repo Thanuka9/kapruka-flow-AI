@@ -18,25 +18,71 @@ function deliveryPillLabel(speed, strings) {
 /** Build contextual opening greeting from intent metadata */
 function buildGreeting(metadata, strings, prompt) {
   const intent = metadata?.intent_parsed || {};
-  const recipient = intent.recipient ? ` for ${intent.recipient}` : "";
-  const occasion  = intent.occasion  ? ` — ${String(intent.occasion).replace(/_/g, " ")}` : "";
-  const budget    = metadata?.budget_limit
-    ? ` within Rs ${new Intl.NumberFormat("en-LK", { maximumFractionDigits: 0 }).format(metadata.budget_limit)}`
-    : "";
-  const cats = (intent.matched_categories || []).slice(0, 2).join(" & ") || "gifts";
+  const s = strings || {};
+
+  const cleanKey = (k) =>
+    String(k || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "");
+
+  // Localize occasion
+  let occasionStr = "";
+  if (intent.occasion) {
+    const occClean = String(intent.occasion).replace(/_/g, " ");
+    const occKey = `dna_occasion_${cleanKey(intent.occasion)}`;
+    const occLabel = s[occKey] || occClean;
+    occasionStr = ` — ${occLabel}`;
+  }
+
+  // Localize recipient
+  let recipientStr = "";
+  if (intent.recipient) {
+    const recKey = `dna_recipient_${cleanKey(intent.recipient)}`;
+    const recLabel = s[recKey] || String(intent.recipient);
+    recipientStr = (s.for_recipient || " for {recipient}").replace("{recipient}", recLabel);
+  }
+
+  // Localize budget
+  let budgetStr = "";
+  if (metadata?.budget_limit) {
+    const formattedBudget = new Intl.NumberFormat("en-LK", { maximumFractionDigits: 0 }).format(metadata.budget_limit);
+    budgetStr = (s.within_budget || " within LKR {budget}").replace("{budget}", formattedBudget);
+  }
+
+  // Localize categories
+  const matchedCats = intent.matched_categories || [];
+  const localizedCats = matchedCats.map(cat => {
+    const catKey = `category_${cleanKey(cat)}`;
+    return s[catKey] || cat;
+  });
+  const catsStr = localizedCats.slice(0, 2).join(" & ") || s.category_gifts || "gifts";
 
   if (intent.occasion || intent.recipient) {
-    return `I curated the perfect ${cats}${recipient}${occasion}${budget}. 🎁 Switch plans or ask me anything!`;
+    const template = s.ruka_greeting_curated || "I curated the perfect {categories}{recipient}{occasion}{budget}. 🎁 Switch plans or ask me anything!";
+    return template
+      .replace("{categories}", catsStr)
+      .replace("{recipient}", recipientStr)
+      .replace("{occasion}", occasionStr)
+      .replace("{budget}", budgetStr);
   }
+
   if (prompt) {
-    return `Here's your curated cart for "${prompt.slice(0, 52)}${prompt.length > 52 ? "…" : ""}"${budget}. Anything to tweak?`;
+    const template = s.ruka_greeting_prompt || "Here's your curated cart for \"{prompt}\"{budget}. Anything to tweak?";
+    const truncatedPrompt = prompt.slice(0, 52) + (prompt.length > 52 ? "…" : "");
+    return template
+      .replace("{prompt}", truncatedPrompt)
+      .replace("{budget}", budgetStr);
   }
-  return strings.agent_reply_intro || "Done! Here's what I built. Switch plans or chat with me to refine. 🛒";
+
+  return s.agent_reply_intro || "Done! Here's what I built. Switch plans or chat with me to refine. 🛒";
 }
 
 /**
- * Build ChatGPT-style contextual chat suggestions based on the current cart state.
- * Returns up to 4 smart suggestions.
+ * Build structured suggestion objects.
+ * Each suggestion has an action ID + payload — NOT a text string for parsing.
+ * The label is localized; the action is language-independent.
  */
 function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
   const intent = metadata?.intent_parsed || {};
@@ -47,47 +93,88 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
 
   const suggestions = [];
 
-  // Context-aware first suggestions
+  // Context-aware first suggestion
   if (intent.occasion) {
     const occ = String(intent.occasion).replace(/_/g, " ");
     suggestions.push({
+      id: "GIFT_WRAP",
       icon: "🎀",
-      text: "make it a gift",
-      label: `Gift wrap for ${occ}`,
+      label: (strings.suggestion_gift_wrap || "Gift wrap for {occasion}").replace("{occasion}", occ),
+      action: "gift",
+      payload: {},
     });
   }
 
   if (!cats.includes("chocolate")) {
-    suggestions.push({ icon: "🍫", text: "add chocolates", label: "Add chocolates" });
+    suggestions.push({
+      id: "ADD_CHOCOLATES",
+      icon: "🍫",
+      label: strings.suggestion_add_chocolates || "Add chocolates",
+      action: "add_category",
+      payload: { category: "chocolates" },
+    });
   }
   if (!cats.includes("flowers")) {
-    suggestions.push({ icon: "🌹", text: "add flowers", label: "Add flowers" });
+    suggestions.push({
+      id: "ADD_FLOWERS",
+      icon: "🌹",
+      label: strings.suggestion_add_flowers || "Add flowers",
+      action: "add_category",
+      payload: { category: "flowers" },
+    });
   }
   if (!cats.includes("cake")) {
-    suggestions.push({ icon: "🎂", text: "add cake", label: "Add a cake" });
+    suggestions.push({
+      id: "ADD_CAKE",
+      icon: "🎂",
+      label: strings.suggestion_add_cake || "Add a cake",
+      action: "add_category",
+      payload: { category: "cake" },
+    });
   }
 
   // Budget suggestions
   suggestions.push({
+    id: "CUT_BUDGET",
     icon: "💸",
-    text: `Reduce budget to Rs ${new Intl.NumberFormat("en-LK").format(cheaper)}`,
-    label: `Cut to Rs ${formatBudgetShort(cheaper)}`,
+    label: (strings.suggestion_cut_budget || "Cut to Rs {amount}").replace("{amount}", `${formatBudgetShort(cheaper)}`),
+    action: "budget",
+    payload: { value: cheaper },
   });
   suggestions.push({
+    id: "UPGRADE_PREMIUM",
     icon: "✨",
-    text: `Upgrade to premium plan Rs ${new Intl.NumberFormat("en-LK").format(premium)}`,
-    label: `Go premium Rs ${formatBudgetShort(premium)}`,
+    label: (strings.suggestion_upgrade_premium || "Go premium Rs {amount}").replace("{amount}", `${formatBudgetShort(premium)}`),
+    action: "plan",
+    payload: { value: "premium" },
   });
 
   // Delivery
-  suggestions.push({ icon: "⚡", text: "Switch to same-day delivery", label: "Same-day delivery" });
-  
+  suggestions.push({
+    id: "SAME_DAY_DELIVERY",
+    icon: "⚡",
+    label: strings.suggestion_same_day || "Same-day delivery",
+    action: "plan",
+    payload: { value: "fast" },
+  });
+
   const currentCity = metadata?.delivery_city || "Colombo 01";
   const nextCity = currentCity.toLowerCase().includes("galle") ? "Colombo" : "Galle";
-  suggestions.push({ icon: "🏙", text: `deliver to ${nextCity}`, label: `Ship to ${nextCity}` });
+  suggestions.push({
+    id: "CHANGE_CITY",
+    icon: "🏙",
+    label: (strings.suggestion_change_city || "Ship to {city}").replace("{city}", nextCity),
+    action: "city",
+    payload: { value: nextCity },
+  });
 
-  // Always available
-  suggestions.push({ icon: "🔁", text: "rebuild this cart", label: "Rebuild cart" });
+  suggestions.push({
+    id: "REBUILD_CART",
+    icon: "🔁",
+    label: strings.suggestion_rebuild || "Rebuild cart",
+    action: "rebuild",
+    payload: {},
+  });
 
   return suggestions.slice(0, 4);
 }
@@ -95,6 +182,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
 export default function RukaChat({
   messages = [],
   onSend,
+  onSuggestionAction,
   busy = false,
   strings = {},
   metadata = {},
@@ -106,12 +194,17 @@ export default function RukaChat({
   activeVersion = "initial",
 }) {
   const [text, setText] = useState("");
-  const [showAllSugg, setShowAllSugg] = useState(false);
   const scrollRef = useRef(null);
   const intent = metadata.intent_parsed || {};
 
+  // Fix: defer scroll so React commits DOM update first
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+    const t = setTimeout(() => {
+      el.scrollTop = el.scrollHeight;
+    }, 50);
+    return () => clearTimeout(t);
   }, [messages, busy]);
 
   const profile = metadata.user_profile || clientProfile;
@@ -120,27 +213,12 @@ export default function RukaChat({
     [profile, language, strings]
   );
 
-  // ChatGPT-style contextual suggestions
+  // Structured suggestion cards — action-based, not text-parsed
   const chatSuggestions = useMemo(
     () => buildChatSuggestions(metadata, strings, cartVersions, activeVersion),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [metadata?.budget_limit, metadata?.intent_parsed?.matched_categories, activeVersion]
+    [metadata?.budget_limit, metadata?.intent_parsed?.matched_categories, activeVersion, strings]
   );
-
-  // Legacy quick-reply chips (keep as secondary)
-  const categoriesInCart = new Set(
-    (metadata.intent_parsed?.matched_categories || []).map((c) => String(c).toLowerCase().trim())
-  );
-  const showChoc    = !categoriesInCart.has("chocolate");
-  const showFlowers = !categoriesInCart.has("flowers");
-  const showCake    = !categoriesInCart.has("cake");
-  let dynamicAddLabel = strings.qr_add_choc    || "Add chocolates";
-  let dynamicAddText  = "add chocolates";
-  if (!showChoc) {
-    if (showFlowers)     { dynamicAddLabel = strings.qr_add_flowers   || "Add flowers";   dynamicAddText = "add flowers"; }
-    else if (showCake)   { dynamicAddLabel = strings.qr_add_cake      || "Add cake";      dynamicAddText = "add cake"; }
-    else                 { dynamicAddLabel = strings.qr_add_groceries || "Add groceries"; dynamicAddText = "add groceries"; }
-  }
 
   // Insight pills
   const pills = [];
@@ -165,11 +243,22 @@ export default function RukaChat({
   const agentMessages = messages.filter((m) => m.role === "agent");
   const lastAgent = agentMessages.slice(-1)[0];
 
-  function submit(value) {
-    const v = (value ?? text).trim();
+  function submitText() {
+    const v = text.trim();
     if (!v || busy) return;
-    onSend(v);
+    if (onSend) onSend(v);
     setText("");
+  }
+
+  /** Dispatch a structured suggestion action — no text parsing */
+  function handleSuggClick(sugg) {
+    if (busy) return;
+    if (onSuggestionAction) {
+      onSuggestionAction(sugg.action, sugg.payload);
+    } else if (onSend) {
+      // Fallback: build a safe English text that the parser can handle
+      onSend(`${sugg.action} ${JSON.stringify(sugg.payload)}`);
+    }
   }
 
   return (
@@ -189,7 +278,7 @@ export default function RukaChat({
         {/* Live indicator */}
         <span className="flex items-center gap-1 text-xs text-emerald-400 shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          Live
+          {strings.mcp_status_live || "Live"}
         </span>
       </div>
 
@@ -219,12 +308,19 @@ export default function RukaChat({
           </div>
         )}
 
-        {/* Latest agent message */}
-        {lastAgent && !insightsOnly && (
-          <p className="text-xs text-slate-400 leading-relaxed border-t border-white/8 pt-2">
-            {lastAgent.text}
-          </p>
-        )}
+        {/* Chat messages */}
+        {!insightsOnly && messages.filter(m => m.role !== "user" || true).map((msg, i) => (
+          <div
+            key={i}
+            className={`text-xs leading-relaxed ${
+              msg.role === "user"
+                ? "text-right text-slate-300 bg-white/5 rounded-lg px-2.5 py-1.5 ml-6"
+                : "text-slate-400 border-t border-white/8 pt-2"
+            }`}
+          >
+            {msg.text}
+          </div>
+        ))}
 
         {/* Typing indicator */}
         {busy && (
@@ -236,18 +332,18 @@ export default function RukaChat({
         )}
       </div>
 
-      {/* ── ChatGPT-style suggestion cards ── */}
+      {/* ── Structured suggestion cards ── */}
       {!insightsOnly && (
         <div className="border-t border-white/8 pt-3 space-y-1.5">
           <p className="text-xs text-slate-600 uppercase tracking-widest font-semibold px-0.5 mb-2">
-            Suggested
+            {strings.chat_suggested || "Suggested"}
           </p>
-          {chatSuggestions.map((sugg, i) => (
+          {chatSuggestions.map((sugg) => (
             <button
-              key={i}
+              key={sugg.id}
               type="button"
               disabled={busy}
-              onClick={() => submit(sugg.text)}
+              onClick={() => handleSuggClick(sugg)}
               className="chat-sugg-card disabled:opacity-40"
             >
               <span className="chat-sugg-icon">{sugg.icon}</span>
@@ -261,7 +357,7 @@ export default function RukaChat({
       {/* ── Text input ── */}
       {!insightsOnly && (
         <form
-          onSubmit={(e) => { e.preventDefault(); submit(); }}
+          onSubmit={(e) => { e.preventDefault(); submitText(); }}
           className="flex items-center gap-2 mt-3 pt-3 border-t border-white/8"
         >
           <input

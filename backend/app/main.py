@@ -6,6 +6,7 @@ import uuid
 import json
 import re
 import time
+import asyncio
 from collections import defaultdict, deque
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -33,6 +34,7 @@ from .database import (
     verify_password,
     save_order,
     get_user_orders,
+    get_session_order,
 )
 from .agents import execute_agent_pipeline, run_shopping_agent
 from .mcp_client import call_mcp_tool_safe, call_tool, mcp_session, parse_json_response
@@ -306,206 +308,323 @@ async def handle_intent(req: IntentRequest):
         )
 
 
+
+_active_checkouts = set()
+
+
+def _get_price_from_raw(data: Dict[str, Any]) -> float:
+    p_price = data.get("price", {})
+    if isinstance(p_price, dict):
+        return float(p_price.get("amount") or 0.0)
+    try:
+        return float(p_price)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 @app.post("/api/checkout")
 async def handle_checkout(req: CheckoutRequest):
-    # 1. Fetch products for the specified version from DB
-    versions = get_cart_versions(req.session_id)
-    if not versions or req.cart_version not in versions:
+    # 1. Idempotency Check
+    existing_order = get_session_order(req.session_id, req.cart_version)
+    if existing_order:
+        api_logger.warning(
+            "Idempotency: Order already exists for session %s, version %s",
+            req.session_id,
+            req.cart_version,
+        )
+        return {
+            "success": True,
+            "order_number": existing_order["order_id"],
+            "payment_url": f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={existing_order['order_id']}",
+            "total": existing_order["total_price"],
+            "currency": "LKR",
+            "formatted_message": "Order retrieved successfully (idempotent result).",
+            "duplicate": True,
+        }
+
+    # 2. Concurrency Lock
+    lock_key = f"{req.session_id}:{req.cart_version}"
+    if lock_key in _active_checkouts:
         raise HTTPException(
-            status_code=404, detail="Cart version not found for this session"
+            status_code=409, detail="checkout_duplicate_prevented"
+        )
+    _active_checkouts.add(lock_key)
+
+    try:
+        # Fetch products for the specified version from DB
+        versions = get_cart_versions(req.session_id)
+        if not versions or req.cart_version not in versions:
+            raise HTTPException(
+                status_code=404, detail="Cart version not found for this session"
+            )
+
+        products = versions[req.cart_version]
+        if not products:
+            raise HTTPException(status_code=400, detail="checkout_cart_empty")
+
+        # Safe price sum extraction helper
+        def safe_price_sum(prods):
+            total = 0.0
+            for p in prods:
+                price = p.get("price", 0)
+                if isinstance(price, dict):
+                    total += float(price.get("amount", 0))
+                else:
+                    try:
+                        total += float(price)
+                    except (TypeError, ValueError):
+                        pass
+            return total
+
+        # 3. Delivery Date & City Validation
+        try:
+            delivery_date_dt = datetime.strptime(req.delivery_date, "%Y-%m-%d")
+            if delivery_date_dt.date() < datetime.now().date():
+                raise HTTPException(status_code=400, detail="checkout_date_past")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="delivery_date must be YYYY-MM-DD")
+
+        # 4. Server-side price & stock verification
+        async def verify_product(p):
+            raw_details = await call_mcp_tool_safe(
+                "kapruka_get_product",
+                {"params": {"product_id": p["id"], "response_format": "json"}}
+            )
+            if not raw_details:
+                return p, None
+            try:
+                data = json.loads(raw_details)
+                if "result" in data and isinstance(data["result"], dict):
+                    data = data["result"]
+                return p, data
+            except Exception:
+                return p, None
+
+        verification_tasks = [verify_product(p) for p in products]
+        verification_results = await asyncio.gather(*verification_tasks)
+
+        # Validate each product's price and stock
+        for p, live_data in verification_results:
+            db_price = safe_price_sum([p])
+            
+            if not live_data:
+                # If remote details are completely unavailable, fallback in simulated mode, otherwise raise
+                if not ALLOW_SIMULATED_CHECKOUT:
+                    raise HTTPException(status_code=400, detail="checkout_item_unavailable")
+                continue
+                
+            # Check stock status
+            in_stock = live_data.get("in_stock", True)
+            if in_stock in (False, 0, "false", "False"):
+                raise HTTPException(status_code=400, detail="checkout_item_unavailable")
+                
+            # Check price change (within 5% threshold)
+            live_price = _get_price_from_raw(live_data)
+            if db_price > 0:
+                price_ratio = live_price / db_price
+                if price_ratio < 0.95 or price_ratio > 1.05:
+                    # Price changed significantly
+                    raise HTTPException(status_code=400, detail="checkout_price_changed")
+
+        # Verify delivery city using kapruka_check_delivery tool
+        delivery_params = {
+            "params": {
+                "city": req.delivery_city,
+                "delivery_date": req.delivery_date,
+                "product_id": products[0]["id"] if products else "EF_PC_GROC0V3441P00013",
+                "response_format": "json",
+            }
+        }
+        del_res = await call_mcp_tool_safe("kapruka_check_delivery", delivery_params)
+        if del_res:
+            try:
+                del_data = json.loads(del_res)
+                if "result" in del_data and isinstance(del_data["result"], dict):
+                    del_data = del_data["result"]
+                
+                # If not available to this city/date
+                if del_data.get("available") in (False, 0, "false", "False"):
+                    raise HTTPException(status_code=400, detail="checkout_city_required")
+            except HTTPException:
+                raise
+            except Exception as e:
+                api_logger.warning("Could not parse check_delivery result: %s", e)
+
+        # Categories actually purchased — persisted so the AI learns real preferences.
+        order_categories = [p.get("category") for p in products if p.get("category")]
+
+        # Save the updated delivery state to DB
+        save_delivery_state(
+            req.session_id,
+            city=req.delivery_city,
+            address=req.delivery_address,
+            recipient_name=req.recipient_name,
+            recipient_phone=req.recipient_phone,
+            sender_name=req.sender_name,
+            gift_message=req.gift_message,
         )
 
-    products = versions[req.cart_version]
-    if not products:
-        raise HTTPException(status_code=400, detail="Cart is empty")
+        # Build cart items for MCP
+        mcp_cart = []
+        for p in products:
+            mcp_cart.append({"product_id": p["id"], "quantity": p.get("quantity", 1)})
 
-    # Categories actually purchased — persisted so the AI learns real preferences.
-    order_categories = [p.get("category") for p in products if p.get("category")]
+        api_logger.info(
+            "Creating Kapruka guest order via MCP for session %s", req.session_id
+        )
 
-    # Save the updated delivery state to DB
-    save_delivery_state(
-        req.session_id,
-        city=req.delivery_city,
-        address=req.delivery_address,
-        recipient_name=req.recipient_name,
-        recipient_phone=req.recipient_phone,
-        sender_name=req.sender_name,
-        gift_message=req.gift_message,
-    )
-
-    # 2. Build cart items for MCP
-    mcp_cart = []
-    for p in products:
-        mcp_cart.append({"product_id": p["id"], "quantity": p.get("quantity", 1)})
-
-    # 3. Call remote MCP
-    order_params = {
-        "params": {
-            "cart": mcp_cart,
-            "recipient": {"name": req.recipient_name, "phone": req.recipient_phone},
-            "delivery": {
-                "address": req.delivery_address,
-                "city": req.delivery_city,
-                "date": req.delivery_date,
-                "location_type": "house",
-                "instructions": req.delivery_instructions,
-            },
-            "sender": {"name": req.sender_name, "anonymous": False},
-            "gift_message": req.gift_message,
-            "currency": req.currency or "LKR",
-            "response_format": "json",
-        }
-    }
-
-    api_logger.info(
-        "Creating Kapruka guest order via MCP for session %s", req.session_id
-    )
-
-    mcp_res = await call_mcp_tool_safe("kapruka_create_order", order_params)
-
-    # Track order check event in database analytics
-    log_analytics(
-        req.session_id,
-        "checkout_attempt",
-        {"cart_version": req.cart_version, "total_items": len(mcp_cart)},
-    )
-
-    # Safe price sum extraction helper
-    def safe_price_sum(prods):
-        total = 0.0
-        for p in prods:
-            price = p.get("price", 0)
-            if isinstance(price, dict):
-                total += float(price.get("amount", 0))
-            else:
-                try:
-                    total += float(price)
-                except (TypeError, ValueError):
-                    pass
-        return total
-
-    if mcp_res:
-        try:
-            order_data = json.loads(mcp_res)
-            order_num = (
-                order_data.get("order_ref")
-                or order_data.get("order_number")
-                or order_data.get("order_id")
-            )
-            if not order_num:
-                order_num = "FLOW-REF-" + str(uuid.uuid4())[:8]
-
-            summary = order_data.get("summary") or {}
-            total_val = summary.get("grand_total") or order_data.get("total")
-            if not total_val:
-                total_val = safe_price_sum(products) + 300
-            else:
-                try:
-                    total_val = float(total_val)
-                except Exception:
-                    total_val = safe_price_sum(products) + 300
-
-            pay_url = (
-                order_data.get("checkout_url")
-                or order_data.get("payment_url")
-                or order_data.get("pay_url")
-            )
-            if not pay_url:
-                pay_url = f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={order_num}"
-
-            # Log success
-            log_analytics(
-                req.session_id,
-                "checkout_success",
-                {"order_number": order_num, "total": total_val},
-            )
-            # Save order to DB history
-            save_order(
-                order_id=order_num,
-                email=req.email,
-                session_id=req.session_id,
-                version=req.cart_version,
-                total_price=total_val,
-                delivery_city=req.delivery_city,
-                recipient_name=req.recipient_name,
-                categories=order_categories,
-            )
-            return {
-                "success": True,
-                "order_number": order_num,
-                "payment_url": pay_url,
-                "total": total_val,
-                "currency": order_data.get("currency", "LKR"),
-                "formatted_message": order_data.get(
-                    "message", "Order created successfully!"
-                ),
+        # Call remote MCP
+        order_params = {
+            "params": {
+                "cart": mcp_cart,
+                "recipient": {"name": req.recipient_name, "phone": req.recipient_phone},
+                "delivery": {
+                    "address": req.delivery_address,
+                    "city": req.delivery_city,
+                    "date": req.delivery_date,
+                    "location_type": "house",
+                    "instructions": req.delivery_instructions,
+                },
+                "sender": {"name": req.sender_name, "anonymous": False},
+                "gift_message": req.gift_message,
+                "currency": req.currency or "LKR",
+                "response_format": "json",
             }
-        except Exception as e:
-            api_logger.warning(
-                "Could not parse MCP order result, attempting link fallback: %s", e
-            )
-            pay_link_match = re.search(
-                r"href=['\"](.*?)['\"]|\]\((https://.*?pay.*?)\)",
-                mcp_res,
-                re.IGNORECASE,
-            )
-            if pay_link_match:
-                url = pay_link_match.group(1) or pay_link_match.group(2)
-                sim_order_id = "TEMP-" + str(uuid.uuid4())[:8]
-                final_total = safe_price_sum(products) + 300
+        }
+
+        mcp_res = await call_mcp_tool_safe("kapruka_create_order", order_params)
+
+        # Track order check event in database analytics
+        log_analytics(
+            req.session_id,
+            "checkout_attempt",
+            {"cart_version": req.cart_version, "total_items": len(mcp_cart)},
+        )
+
+        if mcp_res:
+            try:
+                order_data = json.loads(mcp_res)
+                order_num = (
+                    order_data.get("order_ref")
+                    or order_data.get("order_number")
+                    or order_data.get("order_id")
+                )
+                if not order_num:
+                    order_num = "FLOW-REF-" + str(uuid.uuid4())[:8]
+
+                summary = order_data.get("summary") or {}
+                total_val = summary.get("grand_total") or order_data.get("total")
+                if not total_val:
+                    total_val = safe_price_sum(products) + 300
+                else:
+                    try:
+                        total_val = float(total_val)
+                    except Exception:
+                        total_val = safe_price_sum(products) + 300
+
+                pay_url = (
+                    order_data.get("checkout_url")
+                    or order_data.get("payment_url")
+                    or order_data.get("pay_url")
+                )
+                if not pay_url:
+                    pay_url = f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={order_num}"
+
+                # Log success
+                log_analytics(
+                    req.session_id,
+                    "checkout_success",
+                    {"order_number": order_num, "total": total_val},
+                )
+                # Save order to DB history
                 save_order(
-                    order_id=sim_order_id,
+                    order_id=order_num,
                     email=req.email,
                     session_id=req.session_id,
                     version=req.cart_version,
-                    total_price=final_total,
+                    total_price=total_val,
                     delivery_city=req.delivery_city,
                     recipient_name=req.recipient_name,
                     categories=order_categories,
                 )
                 return {
                     "success": True,
-                    "order_number": sim_order_id,
-                    "payment_url": url,
-                    "total": final_total,
-                    "currency": req.currency or "LKR",
-                    "formatted_message": mcp_res,
+                    "order_number": order_num,
+                    "payment_url": pay_url,
+                    "total": total_val,
+                    "currency": order_data.get("currency", "LKR"),
+                    "formatted_message": order_data.get(
+                        "message", "Order created successfully!"
+                    ),
                 }
+            except Exception as e:
+                api_logger.warning(
+                    "Could not parse MCP order result, attempting link fallback: %s", e
+                )
+                pay_link_match = re.search(
+                    r"href=['\"](.*?)['\"]|\]\((https://.*?pay.*?)\)",
+                    mcp_res,
+                    re.IGNORECASE,
+                )
+                if pay_link_match:
+                    url = pay_link_match.group(1) or pay_link_match.group(2)
+                    sim_order_id = "TEMP-" + str(uuid.uuid4())[:8]
+                    final_total = safe_price_sum(products) + 300
+                    save_order(
+                        order_id=sim_order_id,
+                        email=req.email,
+                        session_id=req.session_id,
+                        version=req.cart_version,
+                        total_price=final_total,
+                        delivery_city=req.delivery_city,
+                        recipient_name=req.recipient_name,
+                        categories=order_categories,
+                    )
+                    return {
+                        "success": True,
+                        "order_number": sim_order_id,
+                        "payment_url": url,
+                        "total": final_total,
+                        "currency": req.currency or "LKR",
+                        "formatted_message": mcp_res,
+                    }
 
-    api_logger.error("MCP order creation failed for session %s", req.session_id)
-    log_analytics(req.session_id, "checkout_failed", {"cart_version": req.cart_version})
+        api_logger.error("MCP order creation failed for session %s", req.session_id)
+        log_analytics(req.session_id, "checkout_failed", {"cart_version": req.cart_version})
 
-    if not ALLOW_SIMULATED_CHECKOUT:
-        raise HTTPException(
-            status_code=503,
-            detail="Kapruka order creation failed. Please verify delivery details and try again.",
+        if not ALLOW_SIMULATED_CHECKOUT:
+            raise HTTPException(
+                status_code=503,
+                detail="Kapruka order creation failed. Please verify delivery details and try again.",
+            )
+
+        sim_order_id = "FLOW-SIM-" + str(uuid.uuid4())[:8]
+        sim_url = (
+            f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={sim_order_id}"
         )
-
-    sim_order_id = "FLOW-SIM-" + str(uuid.uuid4())[:8]
-    sim_url = (
-        f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={sim_order_id}"
-    )
-    log_analytics(req.session_id, "checkout_fallback", {"order_id": sim_order_id})
-    final_total = safe_price_sum(products) + 300
-    save_order(
-        order_id=sim_order_id,
-        email=req.email,
-        session_id=req.session_id,
-        version=req.cart_version,
-        total_price=final_total,
-        delivery_city=req.delivery_city,
-        recipient_name=req.recipient_name,
-        categories=order_categories,
-    )
-    return {
-        "success": True,
-        "order_number": sim_order_id,
-        "payment_url": sim_url,
-        "total": final_total,
-        "currency": req.currency or "LKR",
-        "formatted_message": "Simulated checkout — enable ALLOW_SIMULATED_CHECKOUT for development only.",
-        "simulated": True,
-    }
+        log_analytics(req.session_id, "checkout_fallback", {"order_id": sim_order_id})
+        final_total = safe_price_sum(products) + 300
+        save_order(
+            order_id=sim_order_id,
+            email=req.email,
+            session_id=req.session_id,
+            version=req.cart_version,
+            total_price=final_total,
+            delivery_city=req.delivery_city,
+            recipient_name=req.recipient_name,
+            categories=order_categories,
+        )
+        return {
+            "success": True,
+            "order_number": sim_order_id,
+            "payment_url": sim_url,
+            "total": final_total,
+            "currency": req.currency or "LKR",
+            "formatted_message": "Simulated checkout — enable ALLOW_SIMULATED_CHECKOUT for development only.",
+            "simulated": True,
+        }
+    finally:
+        _active_checkouts.discard(lock_key)
 
 
 @app.get("/healthz")

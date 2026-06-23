@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { isBookmarked, toggleBookmark } from "../utils/bookmarks";
 import Icon3D from "./Icon3D";
+import { formatCurrency } from "../utils/format";
 
 const CATEGORY_EMOJI_MAP = {
   flowers: "🌸", cakes: "🎂", groceries: "🛒", chocolates: "🍫",
@@ -20,56 +21,56 @@ function getCategoryEmoji(category, precomputed) {
 
 // ── Curation DNA chip parser ─────────────────────────────────────────
 const OCCASION_KEYWORDS = {
-  "birthday": { label: "Birthday", emoji: "🎂", type: "occasion" },
-  "birth day": { label: "Birthday", emoji: "🎂", type: "occasion" },
-  "anniversary": { label: "Anniversary", emoji: "💍", type: "occasion" },
-  "wedding": { label: "Wedding", emoji: "💒", type: "occasion" },
-  "valentine": { label: "Valentine's", emoji: "💝", type: "occasion" },
-  "mother's day": { label: "Mother's Day", emoji: "🌹", type: "occasion" },
-  "fathers day": { label: "Father's Day", emoji: "👔", type: "occasion" },
-  "christmas": { label: "Christmas", emoji: "🎄", type: "occasion" },
-  "new year": { label: "New Year", emoji: "🎆", type: "occasion" },
-  "graduation": { label: "Graduation", emoji: "🎓", type: "occasion" },
-  "farewell": { label: "Farewell", emoji: "✈️", type: "occasion" },
-  "get well": { label: "Get Well", emoji: "🌻", type: "occasion" },
-  "thank you": { label: "Thank You", emoji: "🙏", type: "occasion" },
+  "birthday": { key: "birthday", label: "Birthday", emoji: "🎂", type: "occasion" },
+  "birth day": { key: "birthday", label: "Birthday", emoji: "🎂", type: "occasion" },
+  "anniversary": { key: "anniversary", label: "Anniversary", emoji: "💍", type: "occasion" },
+  "wedding": { key: "wedding", label: "Wedding", emoji: "💒", type: "occasion" },
+  "valentine": { key: "valentine", label: "Valentine's", emoji: "💝", type: "occasion" },
+  "mother's day": { key: "mothers_day", label: "Mother's Day", emoji: "🌹", type: "occasion" },
+  "fathers day": { key: "fathers_day", label: "Father's Day", emoji: "👔", type: "occasion" },
+  "christmas": { key: "christmas", label: "Christmas", emoji: "🎄", type: "occasion" },
+  "new year": { key: "new_year", label: "New Year", emoji: "🎆", type: "occasion" },
+  "graduation": { key: "graduation", label: "Graduation", emoji: "🎓", type: "occasion" },
+  "farewell": { key: "farewell", label: "Farewell", emoji: "✈️", type: "occasion" },
+  "get well": { key: "get_well", label: "Get Well", emoji: "🌻", type: "occasion" },
+  "thank you": { key: "thank_you", label: "Thank You", emoji: "🙏", type: "occasion" },
 };
 
 const RECIPIENT_KEYWORDS = {
-  "amma": { label: "For Amma", emoji: "👩", type: "recipient" },
-  "mother": { label: "For Mum", emoji: "👩", type: "recipient" },
-  "mom": { label: "For Mum", emoji: "👩", type: "recipient" },
-  "father": { label: "For Dad", emoji: "👨", type: "recipient" },
-  "thaththa": { label: "For Thaththa", emoji: "👨", type: "recipient" },
-  "dad": { label: "For Dad", emoji: "👨", type: "recipient" },
-  "sister": { label: "For Sister", emoji: "👧", type: "recipient" },
-  "brother": { label: "For Brother", emoji: "👦", type: "recipient" },
-  "friend": { label: "For Friend", emoji: "🤝", type: "recipient" },
-  "colleague": { label: "For Colleague", emoji: "💼", type: "recipient" },
-  "teacher": { label: "For Teacher", emoji: "📚", type: "recipient" },
-  "girlfriend": { label: "For Her", emoji: "💕", type: "recipient" },
-  "boyfriend": { label: "For Him", emoji: "💙", type: "recipient" },
-  "partner": { label: "For Partner", emoji: "💑", type: "recipient" },
-  "baby": { label: "For Baby", emoji: "👶", type: "recipient" },
-  "kids": { label: "For Kids", emoji: "🧒", type: "recipient" },
-  "grandma": { label: "For Grandma", emoji: "👵", type: "recipient" },
-  "grandfather": { label: "For Grandpa", emoji: "👴", type: "recipient" },
+  "amma": { key: "amma", label: "For Amma", emoji: "👩", type: "recipient" },
+  "mother": { key: "mother", label: "For Mum", emoji: "👩", type: "recipient" },
+  "mom": { key: "mother", label: "For Mum", emoji: "👩", type: "recipient" },
+  "father": { key: "father", label: "For Dad", emoji: "👨", type: "recipient" },
+  "thaththa": { key: "thaththa", label: "For Thaththa", emoji: "👨", type: "recipient" },
+  "dad": { key: "father", label: "For Dad", emoji: "👨", type: "recipient" },
+  "sister": { key: "sister", label: "For Sister", emoji: "👧", type: "recipient" },
+  "brother": { key: "brother", label: "For Brother", emoji: "👦", type: "recipient" },
+  "friend": { key: "friend", label: "For Friend", emoji: "🤝", type: "recipient" },
+  "colleague": { key: "colleague", label: "For Colleague", emoji: "💼", type: "recipient" },
+  "teacher": { key: "teacher", label: "For Teacher", emoji: "📚", type: "recipient" },
+  "girlfriend": { key: "girlfriend", label: "For Her", emoji: "💕", type: "recipient" },
+  "boyfriend": { key: "boyfriend", label: "For Him", emoji: "💙", type: "recipient" },
+  "partner": { key: "partner", label: "For Partner", emoji: "💑", type: "recipient" },
+  "baby": { key: "baby", label: "For Baby", emoji: "👶", type: "recipient" },
+  "kids": { key: "kids", label: "For Kids", emoji: "🧒", type: "recipient" },
+  "grandma": { key: "grandma", label: "For Grandma", emoji: "👵", type: "recipient" },
+  "grandfather": { key: "grandfather", label: "For Grandpa", emoji: "👴", type: "recipient" },
 };
 
 const SENTIMENT_KEYWORDS = {
-  "heartfelt": { label: "Heartfelt", emoji: "💝", type: "sentiment" },
-  "premium": { label: "Premium", emoji: "✨", type: "sentiment" },
-  "luxur": { label: "Luxury", emoji: "👑", type: "sentiment" },
-  "budget": { label: "Value Pick", emoji: "💸", type: "sentiment" },
-  "popular": { label: "Popular", emoji: "⭐", type: "sentiment" },
-  "fresh": { label: "Fresh", emoji: "🌿", type: "sentiment" },
-  "classic": { label: "Classic", emoji: "🏛️", type: "sentiment" },
-  "surprise": { label: "Surprise", emoji: "🎉", type: "sentiment" },
-  "romantic": { label: "Romantic", emoji: "🌹", type: "sentiment" },
-  "healthy": { label: "Healthy", emoji: "🥗", type: "sentiment" },
-  "traditional": { label: "Traditional", emoji: "🏺", type: "sentiment" },
-  "best seller": { label: "Best Seller", emoji: "🔥", type: "sentiment" },
-  "handpicked": { label: "Handpicked", emoji: "🤌", type: "sentiment" },
+  "heartfelt": { key: "heartfelt", label: "Heartfelt", emoji: "💝", type: "sentiment" },
+  "premium": { key: "premium", label: "Premium", emoji: "✨", type: "sentiment" },
+  "luxur": { key: "luxury", label: "Luxury", emoji: "👑", type: "sentiment" },
+  "budget": { key: "budget", label: "Value Pick", emoji: "💸", type: "sentiment" },
+  "popular": { key: "popular", label: "Popular", emoji: "⭐", type: "sentiment" },
+  "fresh": { key: "fresh", label: "Fresh", emoji: "🌿", type: "sentiment" },
+  "classic": { key: "classic", label: "Classic", emoji: "🏛️", type: "sentiment" },
+  "surprise": { key: "surprise", label: "Surprise", emoji: "🎉", type: "sentiment" },
+  "romantic": { key: "romantic", label: "Romantic", emoji: "🌹", type: "sentiment" },
+  "healthy": { key: "healthy", label: "Healthy", emoji: "🥗", type: "sentiment" },
+  "traditional": { key: "traditional", label: "Traditional", emoji: "🏺", type: "sentiment" },
+  "best seller": { key: "best_seller", label: "Best Seller", emoji: "🔥", type: "sentiment" },
+  "handpicked": { key: "handpicked", label: "Handpicked", emoji: "🤌", type: "sentiment" },
 };
 
 function parseDnaChips(reason) {
@@ -139,13 +140,8 @@ export default function ProductCard({
   };
 
   const priceAmount = product.price?.amount ?? product.price ?? 0;
-  const formattedPrice = new Intl.NumberFormat("en-LK", {
-    style: "currency",
-    currency: product.price?.currency || "LKR",
-    maximumFractionDigits: 0,
-  }).format(priceAmount).replace(/\s+/g, " ");
+  const formattedPrice = formatCurrency(priceAmount);
 
-  const categoryEmoji = getCategoryEmoji(product.category, product.category_emoji);
   const categoryLabel = product.category || activeStrings.general_category || "General";
   const hasValidImage = product.image_url && !imgError;
   const displayProducts = searchQuery.trim().length >= 3 ? searchResults : candidates;
@@ -170,12 +166,35 @@ export default function ProductCard({
     }
   };
 
-  const deliveryLabel =
-    product.delivery_speed === "Today"
-      ? "⚡ Today"
-      : product.delivery_speed === "Fast"
-        ? "🚀 Fast delivery"
-        : "📦 Standard";
+  const categoryIcon = useMemo(() => {
+    const category = product.category;
+    if (!category) return "box";
+    const lower = category.toLowerCase().trim();
+    if (lower.includes("flower")) return "flower";
+    if (lower.includes("cake")) return "gift";
+    if (lower.includes("grocery") || lower.includes("shopping") || lower.includes("fruit")) return "cart";
+    if (lower.includes("electronic") || lower.includes("appliance")) return "bolt";
+    if (lower.includes("gift")) return "gift";
+    if (lower.includes("hamper")) return "box";
+    if (lower.includes("clothing") || lower.includes("dress") || lower.includes("cosmetic") || lower.includes("fashion") || lower.includes("bag")) return "bag";
+    if (lower.includes("toy")) return "gift";
+    if (lower.includes("star") || lower.includes("popular")) return "star";
+    return "box";
+  }, [product.category]);
+
+  const deliveryIcon = useMemo(() => {
+    const speed = String(product.delivery_speed || "").toLowerCase();
+    if (speed === "today") return "bolt";
+    if (speed === "fast") return "truck";
+    return "box";
+  }, [product.delivery_speed]);
+
+  const deliveryLabelText = useMemo(() => {
+    const speed = String(product.delivery_speed || "").toLowerCase();
+    if (speed === "today") return activeStrings.insight_delivery_today || "Today";
+    if (speed === "fast") return activeStrings.insight_delivery_fast || "Fast";
+    return activeStrings.insight_delivery_standard || "Standard";
+  }, [product.delivery_speed, activeStrings]);
 
   return (
     <div
@@ -210,21 +229,22 @@ export default function ProductCard({
             />
           ) : (
             <div className="flex flex-col items-center justify-center text-center p-6 h-full w-full bg-gradient-to-br from-flow-bg-secondary to-flow-bg">
-              <span className="text-5xl mb-3">{categoryEmoji}</span>
-              <span className="text-label">{categoryLabel}</span>
+              <Icon3D name={categoryIcon} size={44} float className="mb-3" />
+              <span className="text-label text-slate-400">{categoryLabel}</span>
             </div>
           )}
 
           {/* ✨ AI Pick badge top-left */}
           {product.reason && !compact && (
             <span className="absolute top-2 left-2 ai-pick-badge">
-              ✨ AI Pick
+              {activeStrings.ai_pick || "✨ AI Pick"}
             </span>
           )}
 
           {/* Delivery badge bottom-left */}
-          <span className="absolute bottom-2 left-2 px-2 py-1 rounded-pill text-xs font-medium bg-[#090d16]/75 border border-white/10 text-slate-300 backdrop-blur-md shadow-sm">
-            {deliveryLabel}
+          <span className="absolute bottom-2 left-2 px-2.5 py-1.5 rounded-pill text-xs font-semibold bg-[#090d16]/80 border border-white/10 text-slate-200 backdrop-blur-md shadow-sm flex items-center gap-1.5">
+            <Icon3D name={deliveryIcon} size={13} tilt />
+            {deliveryLabelText}
           </span>
 
           {product.in_stock === false && (
@@ -234,8 +254,9 @@ export default function ProductCard({
           )}
         </div>
 
-        <span className="text-label flex items-center gap-1.5 mb-2">
-          <span>{categoryEmoji}</span> {categoryLabel}
+        <span className="text-label flex items-center gap-2 mb-2 text-slate-400">
+          <Icon3D name={categoryIcon} size={14} tilt />
+          <span>{categoryLabel}</span>
         </span>
 
         <h3 className="text-product-title line-clamp-2 text-flow-text mb-2 pr-8" title={product.name}>
@@ -260,11 +281,15 @@ export default function ProductCard({
         {/* ── Curation DNA chips ── */}
         {dnaChips.length > 0 && !compact && (
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {dnaChips.map((chip, i) => (
-              <span key={i} className={DNA_CHIP_CLASS[chip.type] || "dna-chip dna-chip-sentiment"}>
-                {chip.emoji} {chip.label}
-              </span>
-            ))}
+            {dnaChips.map((chip, i) => {
+              const key = `dna_${chip.type}_${chip.key}`;
+              const label = activeStrings[key] || chip.label;
+              return (
+                <span key={i} className={DNA_CHIP_CLASS[chip.type] || "dna-chip dna-chip-sentiment"}>
+                  {chip.emoji} {label}
+                </span>
+              );
+            })}
           </div>
         )}
 

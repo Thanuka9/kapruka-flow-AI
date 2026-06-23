@@ -159,6 +159,15 @@ const ICONS = {
       <path d="M8.6 10.6V7a3.4 3.4 0 016.8 0v3.6" fill="none" stroke="#701A75" strokeWidth="1.8" strokeLinecap="round" />
     </>
   ),
+  user: (id) => (
+    <>
+      <Defs id={id} from="#93C5FD" to="#2563EB" />
+      <circle cx="12" cy="8" r="4" fill={`url(#${id}-g)`} />
+      <circle cx="12" cy="8" r="4" fill={`url(#${id}-hi)`} />
+      <path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6H5z" fill={`url(#${id}-g)`} />
+      <path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6H5z" fill={`url(#${id}-hi)`} />
+    </>
+  ),
 };
 
 export default function Icon3D({

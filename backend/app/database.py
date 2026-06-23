@@ -536,3 +536,21 @@ def get_user_orders(email: str) -> List[Dict]:
         return []
     finally:
         conn.close()
+
+
+def get_session_order(session_id: str, version: str) -> Optional[Dict]:
+    """Retrieve an order by session_id and version (idempotency key lookup)."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT order_id, session_id, version, total_price, delivery_city, recipient_name, created_at, categories FROM orders WHERE session_id = ? AND version = ? LIMIT 1",
+            (session_id, version),
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    except Exception as e:
+        logger.error("get_session_order failed: %s", e)
+        return None
+    finally:
+        conn.close()

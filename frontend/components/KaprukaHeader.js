@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import Icon3D from "./Icon3D";
 
-const CATEGORY_EMOJIS = {
-  flowers: "🌸", cakes: "🎂", groceries: "🛒", grocery: "🛒",
-  chocolates: "🍫", toys: "🧸", gifts: "🎁", hampers: "🧺",
-  fruits: "🍎", electronics: "🔌", clothing: "👕", books: "📚",
-  cosmetics: "💄", household: "🏠", liquor: "🍾", babyitems: "👶",
-  default: "📦",
-};
-
-function categoryEmoji(name) {
-  if (!name) return CATEGORY_EMOJIS.default;
-  const key = name.toLowerCase().replace(/[^a-z]/g, "");
-  return CATEGORY_EMOJIS[key] || CATEGORY_EMOJIS.default;
+function categoryIcon(name) {
+  if (!name) return "box";
+  const lower = name.toLowerCase().trim();
+  if (lower.includes("flower")) return "flower";
+  if (lower.includes("cake")) return "gift";
+  if (lower.includes("grocery") || lower.includes("shopping") || lower.includes("fruit") || lower.includes("liquor")) return "cart";
+  if (lower.includes("electronic") || lower.includes("appliance")) return "bolt";
+  if (lower.includes("gift")) return "gift";
+  if (lower.includes("hamper")) return "box";
+  if (lower.includes("clothing") || lower.includes("dress") || lower.includes("cosmetic") || lower.includes("fashion") || lower.includes("toy") || lower.includes("baby")) return "bag";
+  if (lower.includes("book")) return "box";
+  return "box";
 }
 
 function SearchIcon({ className = "w-4 h-4" }) {
@@ -36,6 +36,9 @@ export default function KaprukaHeader({
   currentLanguage,
   onLanguageChange,
   categories,
+  categoriesLoading = false,
+  categoriesError = false,
+  onCategoriesRetry,
   onCategorySelect,
   onSearchSubmit,
   user,
@@ -124,8 +127,27 @@ export default function KaprukaHeader({
                     <button type="button" onClick={() => setCategoriesOpen(false)} className="text-slate-400 hover:text-white font-bold px-2">✕</button>
                   </div>
                   <div className="p-3 grid grid-cols-1 gap-0.5">
-                    {(categories || []).length === 0 ? (
-                      <p className="py-8 text-center text-base text-slate-500">{s.loading || "Loading…"}</p>
+                    {categoriesLoading ? (
+                      <div className="px-5 py-4 space-y-3">
+                        {[1,2,3,4,5].map(i => (
+                          <div key={i} className="h-8 rounded-lg bg-white/5 animate-pulse" />
+                        ))}
+                      </div>
+                    ) : categoriesError ? (
+                      <div className="px-5 py-8 text-center">
+                        <p className="text-sm text-slate-400 mb-3">Failed to load categories</p>
+                        <button
+                          type="button"
+                          onClick={onCategoriesRetry}
+                          className="text-sm font-semibold text-kapruka-red hover:underline"
+                        >
+                          {s.try_again || "Try again"}
+                        </button>
+                      </div>
+                    ) : (categories || []).length === 0 ? (
+                      <div className="px-5 py-8 text-center">
+                        <p className="text-sm text-slate-400">{s.loading || "Loading…"}</p>
+                      </div>
                     ) : (
                       categories.map((cat, idx) => (
                         <button
@@ -137,8 +159,8 @@ export default function KaprukaHeader({
                             onCategorySelect(cat.name);
                           }}
                         >
-                          <span>{categoryEmoji(cat.name)}</span>
-                          <span className="font-medium">{cat.name}</span>
+                          <Icon3D name={categoryIcon(cat.name)} size={18} tilt />
+                          <span className="font-medium">{s[`category_${String(cat.name).toLowerCase().trim()}`] || cat.name}</span>
                         </button>
                       ))
                     )}
@@ -219,25 +241,48 @@ export default function KaprukaHeader({
             </div>
 
             {user ? (
-              <button
-                type="button"
-                onClick={onProfileClick}
-                className="hidden sm:flex flex-col items-start px-4 py-1 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all max-w-[160px] lg:max-w-[200px]"
-              >
-                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.account_label || "Account"}</span>
-                <span className="text-xs font-bold text-slate-200 leading-tight truncate w-full text-left mt-0.5">
-                  {user.name || user.email}
-                </span>
-              </button>
+              <>
+                {/* Mobile user indicator — always visible when logged in */}
+                <button
+                  type="button"
+                  onClick={onProfileClick}
+                  className="sm:hidden flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold text-flow-text shrink-0 shadow-card"
+                  style={{ background: "linear-gradient(135deg, #F6C343 0%, #FFD86B 100%)" }}
+                  aria-label="My account"
+                >
+                  {(user.name || user.fullName || user.email || "U").charAt(0).toUpperCase()}
+                </button>
+                <button
+                  type="button"
+                  onClick={onProfileClick}
+                  className="hidden sm:flex flex-col items-start px-4 py-1 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all max-w-[160px] lg:max-w-[200px]"
+                >
+                  <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.account_label || "Account"}</span>
+                  <span className="text-xs font-bold text-slate-200 leading-tight truncate w-full text-left mt-0.5">
+                    {user.name || user.fullName || user.email?.split("@")[0] || "Account"}
+                  </span>
+                </button>
+              </>
             ) : (
-              <button
-                type="button"
-                onClick={onLoginClick}
-                className="hidden sm:flex flex-col items-start px-4 py-1.5 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
-              >
-                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.hello_label || "Hello"}</span>
-                <span className="text-xs font-bold text-slate-200 leading-tight mt-0.5">{s.login}</span>
-              </button>
+              <>
+                {/* Mobile login button */}
+                <button
+                  type="button"
+                  onClick={onLoginClick}
+                  className="sm:hidden flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/8 text-slate-300 hover:bg-white/10 hover:text-white transition-all shrink-0"
+                  aria-label={s.login || "Login"}
+                >
+                  <Icon3D name="user" size={18} tilt />
+                </button>
+                <button
+                  type="button"
+                  onClick={onLoginClick}
+                  className="hidden sm:flex flex-col items-start px-4 py-1.5 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
+                >
+                  <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.hello_label || "Hello"}</span>
+                  <span className="text-xs font-bold text-slate-200 leading-tight mt-0.5">{s.login}</span>
+                </button>
+              </>
             )}
 
             <button

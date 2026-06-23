@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import LiveDeliveryMap from "./LiveDeliveryMap";
+import { formatCurrency } from "../utils/format";
 
 // Confetti emoji pool
 const CONFETTI_EMOJIS = ["🎁","🎂","🌸","🍫","✨","💝","🎉","🌺","🧁","🎊","💐","🥂"];
@@ -137,6 +138,8 @@ export default function CheckoutModal({
   const [checkoutError, setCheckoutError] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [processing, setProcessing] = useState(false);
   const confettiData = useRef(makeConfetti());
 
   const CHECKOUT_GENERATING_MS = 700;
@@ -268,15 +271,49 @@ export default function CheckoutModal({
 
   if (!isOpen) return null;
 
+  /** Validate all required fields, return errors object */
+  function validate() {
+    const s = activeStrings;
+    const errors = {};
+    if (!senderName.trim() || senderName.trim().length < 2)
+      errors.senderName = s.checkout_sender_required || "Sender name is required";
+    if (!recipientName.trim() || recipientName.trim().length < 2)
+      errors.recipientName = s.checkout_recipient_required || "Recipient name is required";
+    if (!recipientPhone.trim())
+      errors.recipientPhone = s.checkout_phone_required || "Mobile number is required";
+    else if (!/^(\+94|0)?7[0-9]{8}$/.test(recipientPhone.replace(/\s/g, "")))
+      errors.recipientPhone = s.checkout_phone_invalid || "Enter a valid Sri Lanka mobile number (07xxxxxxxx)";
+    if (!city.trim())
+      errors.city = s.checkout_city_required || "Delivery city is required";
+    if (!date)
+      errors.date = s.checkout_date_required || "Delivery date is required";
+    else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (new Date(date) < today)
+        errors.date = s.checkout_date_past || "Please select a future delivery date";
+    }
+    return errors;
+  }
+
   async function handleSubmit(e) {
     if (e) e.preventDefault();
-    setGeneratingCheckout(true);
-    setLoading(true);
+    // Prevent duplicate submissions
+    if (processing || loading) return;
+    // Client-side validation
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+    setProcessing(true);
     setOrderResult(null);
     setCheckoutError(null);
 
     const started = Date.now();
-    const effectiveEmail = email || (guestEmail.trim() || undefined);
+    setGeneratingCheckout(true);
+    setLoading(true);
 
     const combinedInstructions = [
       instructions ? `Instructions: ${instructions}` : "",
@@ -327,14 +364,15 @@ export default function CheckoutModal({
           }
         }
       } else if (response.ok && data.simulated) {
-        setCheckoutError(activeStrings.checkout_failed_sub);
+        setCheckoutError(activeStrings.checkout_failed_sub || "Checkout failed");
       } else {
         const detail = String(data.detail || data.error || "");
-        const isStock = response.status === 503 || /stock|out of stock|unavailable|not available/i.test(detail);
-        setCheckoutError(isStock
-          ? (activeStrings.checkout_stock_error || activeStrings.checkout_failed_sub)
-          : detail || activeStrings.checkout_failed_sub
-        );
+        const localizedMsg = activeStrings[detail] || (
+          /stock|out of stock|unavailable|not available/i.test(detail)
+            ? (activeStrings.checkout_item_unavailable || activeStrings.checkout_stock_error)
+            : detail
+        ) || activeStrings.checkout_failed_sub || "Checkout failed";
+        setCheckoutError(localizedMsg);
       }
     } catch (err) {
       console.error(err);
@@ -346,14 +384,11 @@ export default function CheckoutModal({
     } finally {
       setGeneratingCheckout(false);
       setLoading(false);
+      setProcessing(false);
     }
   }
 
-  const formattedTotal = new Intl.NumberFormat("en-LK", {
-    style: "currency",
-    currency: "LKR",
-    maximumFractionDigits: 0
-  }).format((totalCost || 0) + deliveryFee).replace(/\s+/g, " ");
+  const formattedTotal = formatCurrency((totalCost || 0) + deliveryFee);
 
   function handleShare() {
     const text = `🎁 Kapruka Order #${orderResult?.order_number || "—"} placed!\nTotal: ${formattedTotal}\nTracking via Kapruka Flow AI → https://kapruka-flow-ai.vercel.app`;
@@ -427,6 +462,9 @@ export default function CheckoutModal({
                     />
                     <label>{activeStrings.your_full_name}</label>
                   </div>
+                  {fieldErrors.senderName && (
+                    <p className="text-red-500 text-xs mt-1 pl-1 animate-fadeIn">{fieldErrors.senderName}</p>
+                  )}
                   {!email && (
                     <div className="space-y-2.5 pt-1">
                       <div className="float-label-group">
@@ -453,13 +491,23 @@ export default function CheckoutModal({
                 <div className="checkout-section-2 p-4 rounded-lg bg-white/5 border border-white/5 space-y-4">
                   <h3 className="text-sm font-bold text-kapruka-red">{activeStrings.recipient_details}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="float-label-group">
-                      <input type="text" required value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder=" " className="w-full p-3 text-sm input-premium" />
-                      <label>{activeStrings.name}</label>
+                    <div>
+                      <div className="float-label-group">
+                        <input type="text" required value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder=" " className="w-full p-3 text-sm input-premium" />
+                        <label>{activeStrings.name}</label>
+                      </div>
+                      {fieldErrors.recipientName && (
+                        <p className="text-red-500 text-xs mt-1 pl-1 animate-fadeIn">{fieldErrors.recipientName}</p>
+                      )}
                     </div>
-                    <div className="float-label-group">
-                      <input type="text" required value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} placeholder=" " className="w-full p-3 text-sm input-premium" />
-                      <label>{activeStrings.mobile_phone}</label>
+                    <div>
+                      <div className="float-label-group">
+                        <input type="text" required value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} placeholder=" " className="w-full p-3 text-sm input-premium" />
+                        <label>{activeStrings.mobile_phone}</label>
+                      </div>
+                      {fieldErrors.recipientPhone && (
+                        <p className="text-red-500 text-xs mt-1 pl-1 animate-fadeIn">{fieldErrors.recipientPhone}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -481,6 +529,9 @@ export default function CheckoutModal({
                         />
                         <label>{activeStrings.delivery_city}</label>
                       </div>
+                      {fieldErrors.city && (
+                        <p className="text-red-500 text-xs mt-1 pl-1 animate-fadeIn">{fieldErrors.city}</p>
+                      )}
                       {showCitySuggestions && citySuggestions.length > 0 && (
                         <div className="absolute left-0 top-full mt-1 w-full bg-[#1f173b] border border-white/10 rounded-lg shadow-xl z-50 max-h-40 overflow-y-auto">
                           {citySuggestions.map((item, idx) => (
@@ -492,9 +543,14 @@ export default function CheckoutModal({
                         </div>
                       )}
                     </div>
-                    <div className="float-label-group">
-                      <input type="date" required value={date} onChange={(e) => setDate(e.target.value)} placeholder=" " className="w-full p-3 text-sm input-premium bg-[#1f173b]" />
-                      <label>{activeStrings.preferred_date}</label>
+                    <div>
+                      <div className="float-label-group">
+                        <input type="date" required value={date} onChange={(e) => setDate(e.target.value)} placeholder=" " className="w-full p-3 text-sm input-premium bg-[#1f173b]" />
+                        <label>{activeStrings.preferred_date}</label>
+                      </div>
+                      {fieldErrors.date && (
+                        <p className="text-red-500 text-xs mt-1 pl-1 animate-fadeIn">{fieldErrors.date}</p>
+                      )}
                     </div>
                   </div>
 
@@ -665,8 +721,8 @@ export default function CheckoutModal({
                     return (
                       <div key={item.id} className="flex justify-between gap-2 text-sm text-slate-300 leading-tight">
                         <span className="truncate flex-1">{item.name}</span>
-                        <span className="shrink-0 w-20 text-right font-semibold font-mono">
-                          {new Intl.NumberFormat("en-LK", { maximumFractionDigits: 0 }).format(unitPrice * qty)} LKR
+                        <span className="shrink-0 text-right font-semibold font-mono">
+                          {formatCurrency(unitPrice * qty)}
                         </span>
                       </div>
                     );
@@ -676,7 +732,7 @@ export default function CheckoutModal({
                   <div className="flex justify-between font-bold text-white text-sm border-t border-white/10 pt-1.5">
                     <span>{activeStrings.final_total}</span>
                     <span className="font-mono text-kapruka-red">
-                      {new Intl.NumberFormat("en-LK", { style: "currency", currency: orderResult.currency || "LKR", maximumFractionDigits: 0 }).format(orderResult.total).replace(/\s+/g, " ")}
+                      {formatCurrency(orderResult.total)}
                     </span>
                   </div>
                 </div>

@@ -9,6 +9,7 @@ import RukaChat from "./RukaChat";
 import Icon3D from "./Icon3D";
 import { getMcpToolLabel } from "./localization";
 import AnimatedTotal from "./AnimatedTotal";
+import { formatCurrency } from "../utils/format";
 
 export default function CartPanel({
   cartVersions = {},
@@ -20,6 +21,7 @@ export default function CartPanel({
   chatMessages = [],
   chatBusy = false,
   onChatSend,
+  onSuggestionAction,   // structured action handler (language-independent)
   onUpdateCartItems,
   onCheckout,
   onControlBarAction,
@@ -128,13 +130,6 @@ export default function CartPanel({
   const isOverBudget = total > budgetLimit;
 
   // Formatting helpers
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-LK", {
-      style: "currency",
-      currency: "LKR",
-      maximumFractionDigits: 0
-    }).format(amount).replace(/\s+/g, " ");
-  };
 
   const priceOf = (p) => p?.price?.amount ?? p?.price ?? 0;
   const inCartIds = new Set(items.map((it) => it.id));
@@ -332,7 +327,7 @@ export default function CartPanel({
             onClick={() => setCompareModalOpen(true)}
             className="text-xs font-bold text-kapruka-gold hover:text-kapruka-gold/80 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/8 hover:bg-white/8"
           >
-            ⚖️ Compare Versions
+            {activeStrings.compare_versions || "⚖️ Compare Versions"}
           </button>
         </div>
 
@@ -508,6 +503,7 @@ export default function CartPanel({
             messages={chatMessages}
             busy={chatBusy}
             onSend={onChatSend}
+            onSuggestionAction={onSuggestionAction}
             strings={activeStrings}
             metadata={metadata}
             prompt={prompt}
@@ -577,7 +573,7 @@ export default function CartPanel({
                     
                     <div className="flex items-center justify-between">
                       <div className={`text-label ${isActiveStep ? "text-[#F6C343] font-bold" : "group-hover:text-red-400 text-slate-500"}`}>
-                        Step {idx + 1} {isActiveStep && " (Current)"}
+                        {(activeStrings.step_label || "Step {n}").replace("{n}", idx + 1)}{isActiveStep && ` ${activeStrings.step_current || "(Current)"}`}
                       </div>
                       <div className="text-[10px] text-slate-500 font-mono">
                         {stepPlanLabel} · LKR {stepBudget.toLocaleString()} · {stepLang}
@@ -589,8 +585,8 @@ export default function CartPanel({
                     </div>
 
                     <div className="text-xs text-slate-400 mt-1 flex items-center justify-between">
-                      <span>Spent: Rs {stepTotal.toLocaleString()}</span>
-                      <span>{stepItems.length} items</span>
+                      <span>{(activeStrings.cart_history_spent || "Spent: Rs {amount}").replace("{amount}", stepTotal.toLocaleString())}</span>
+                      <span>{(activeStrings.cart_history_items || "{n} items").replace("{n}", stepItems.length)}</span>
                     </div>
 
                     {stepItems.length > 0 && (
@@ -665,8 +661,8 @@ export default function CartPanel({
               />
             </div>
             <div className="flex justify-between text-base text-flow-muted">
-              <span>{formatCurrency(total)} spent</span>
-              <span>Limit {formatCurrency(sliderBudget)}</span>
+              <span>{(activeStrings.budget_spent || "{amount} spent").replace("{amount}", formatCurrency(total))}</span>
+              <span>{(activeStrings.budget_limit_label || "Limit {amount}").replace("{amount}", formatCurrency(sliderBudget))}</span>
             </div>
           </div>
 

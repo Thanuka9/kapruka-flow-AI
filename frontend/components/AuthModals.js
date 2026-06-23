@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getBookmarks, removeBookmark } from "../utils/bookmarks";
 import { buildClientAiProfile, buildProfileInsightLines, buildReorderPrompt } from "../utils/userContext";
 import Icon3D from "./Icon3D";
+import { formatCurrency } from "../utils/format";
 
 /** Locks page scroll + enables Escape-to-close while a modal is open. */
 function useModalChrome(isOpen, onClose) {
@@ -161,19 +162,15 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   );
 }
 
-function userInitials(name, email) {
-  const src = (name || email || "?").trim();
-  const parts = src.split(/\s+/).filter(Boolean);
+function userInitials(name, fullName, email) {
+  const n = name || fullName || email?.split("@")[0] || "?";
+  const parts = n.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return src.slice(0, 2).toUpperCase();
+  return n.slice(0, 2).toUpperCase();
 }
 
 function formatLKR(amount) {
-  return new Intl.NumberFormat("en-LK", {
-    style: "currency",
-    currency: "LKR",
-    maximumFractionDigits: 0,
-  }).format(Number(amount) || 0);
+  return formatCurrency(amount);
 }
 
 function formatOrderDate(iso) {
@@ -276,7 +273,7 @@ export function ProfileModal({
                 className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-flow-text shrink-0 shadow-card"
                 style={{ background: "linear-gradient(135deg, #F6C343 0%, #FFD86B 100%)" }}
               >
-                {userInitials(user.name, user.email)}
+                {userInitials(user.name, user.fullName, user.email)}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-label text-flow-muted">{s.profile_title || "Your account"}</p>
@@ -358,17 +355,17 @@ export function ProfileModal({
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-                          <span className="text-flow-muted">Recipient</span>
+                          <span className="text-flow-muted">{s.order_recipient || "Recipient"}</span>
                           <span className="text-flow-text font-medium truncate text-right">{o.recipient_name || "—"}</span>
-                          <span className="text-flow-muted">City</span>
+                          <span className="text-flow-muted">{s.order_city || "City"}</span>
                           <span className="text-flow-text font-medium text-right">{o.delivery_city || "—"}</span>
                           {o.created_at && (
                             <>
-                              <span className="text-flow-muted">Date</span>
+                              <span className="text-flow-muted">{s.order_date || "Date"}</span>
                               <span className="text-flow-text text-right">{formatOrderDate(o.created_at)}</span>
                             </>
                           )}
-                          <span className="text-flow-muted">Total</span>
+                          <span className="text-flow-muted">{s.order_total || "Total"}</span>
                           <span className="text-flow-text font-bold text-right">{formatLKR(o.total_price)}</span>
                         </div>
                         {o.categories && (

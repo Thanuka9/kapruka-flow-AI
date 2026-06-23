@@ -38,6 +38,8 @@ export default function Home() {
   const [catalogCache, setCatalogCache] = useState([]);
   const [lastFailedPrompt, setLastFailedPrompt] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoriesError, setCategoriesError] = useState(false);
   const [user, setUser] = useState(null);
   const [userOrders, setUserOrders] = useState([]);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -98,12 +100,10 @@ export default function Home() {
     if (urlSession) {
       restoreSession(urlSession, { goToCart: true });
     } else {
-      // Clear old session from localStorage so reload starts clean (0 items)
-      localStorage.removeItem("kapruka_flow_session_id");
-      localStorage.removeItem("kapruka_flow_cart_versions");
-      localStorage.removeItem("kapruka_flow_story");
-      localStorage.removeItem("kapruka_flow_metadata");
-      localStorage.removeItem("kapruka_flow_evolution");
+      const savedSession = localStorage.getItem("kapruka_flow_session_id");
+      if (savedSession) {
+        restoreSession(savedSession, { goToCart: true });
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -115,11 +115,27 @@ export default function Home() {
       .then((data) => setMcpStatus(data?.mcp?.ok === true ? "live" : "unavailable"))
       .catch(() => setMcpStatus("unavailable"));
 
-    fetch("/api/categories")
-      .then((r) => r.json())
-      .then((data) => setCategories(data?.categories || []))
-      .catch(() => setCategories([]));
+    loadCategories();
   }, []);
+
+  async function loadCategories() {
+    setCategoriesLoading(true);
+    setCategoriesError(false);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const r = await fetch("/api/categories", { signal: controller.signal });
+      clearTimeout(timer);
+      const data = await r.json();
+      setCategories(data?.categories || []);
+    } catch {
+      clearTimeout(timer);
+      setCategoriesError(true);
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  }
 
   function handleLoginSuccess(loggedInUser) {
     setUser(loggedInUser);
@@ -812,6 +828,58 @@ export default function Home() {
     });
   }
 
+  // Handle structured suggestion action clicks (language-independent)
+  async function handleSuggestionAction(action, payload = {}) {
+    const s = LOCALIZED_STRINGS[currentLanguage] || LOCALIZED_STRINGS["en-US"];
+    const pushAgent = (msg) =>
+      setChatMessages((prev) => [...prev, { role: "agent", text: msg }]);
+    const fmt = (tpl, vars) =>
+      Object.entries(vars || {}).reduce((acc, [k, v]) => acc.split(`{${k}}`).join(String(v)), tpl || "");
+
+    setChatBusy(true);
+    try {
+      if (action === "add_category") {
+        // Delegate to handleRefine with a safe English query
+        setChatBusy(false);
+        await handleRefine(`add ${payload.category}`);
+        return;
+      } else if (action === "plan") {
+        const ver = payload.value;
+        if (cartVersions[ver] && cartVersions[ver].length > 0) {
+          setActiveVersion(ver);
+        }
+        pushAgent(
+          ver === "premium" ? s.chat_reply_premium
+          : ver === "fast"  ? s.chat_reply_fast
+          : s.chat_reply_cheaper
+        );
+      } else if (action === "budget") {
+        handleBudgetChange(payload.value);
+        pushAgent(fmt(s.chat_reply_budget, { budget: payload.value.toLocaleString() }));
+      } else if (action === "city") {
+        setMetadata((prev) => ({ ...prev, delivery_city: payload.value }));
+        pushAgent(fmt(s.chat_reply_city, { city: payload.value }));
+      } else if (action === "gift") {
+        setMetadata((prev) => ({
+          ...prev,
+          intent_parsed: { ...(prev.intent_parsed || {}), gift_mode: true },
+        }));
+        pushAgent(s.chat_reply_gift);
+      } else if (action === "rebuild") {
+        pushAgent(s.chat_reply_rebuild || "Rebuilding your curated cart...");
+        setChatBusy(false);
+        handleStartBuild(lastPrompt || "gifts", currentLanguage, metadata.budget_limit);
+        return;
+      } else {
+        setChatBusy(false);
+        await handleRefine(payload.query || payload.category || "");
+        return;
+      }
+    } finally {
+      setChatBusy(false);
+    }
+  }
+
   // Handle control bar action clicks
   async function handleControlBarAction(action) {
     if (!sessionId) return;
@@ -971,6 +1039,9 @@ export default function Home() {
         currentLanguage={currentLanguage}
         onLanguageChange={handleLanguageChange}
         categories={categories}
+        categoriesLoading={categoriesLoading}
+        categoriesError={categoriesError}
+        onCategoriesRetry={loadCategories}
         onCategorySelect={handleCategorySelect}
         onSearchSubmit={handleHeaderSearch}
         user={user}
@@ -1034,7 +1105,7 @@ export default function Home() {
               onClick={() => setPageState("input")}
               className="btn-primary px-10"
             >
-              Start shopping
+              {strings.profile_start_shopping || "Start shopping"}
             </button>
           </div>
         ) : pageState === "cart" && (
@@ -1048,6 +1119,7 @@ export default function Home() {
             chatMessages={chatMessages}
             chatBusy={chatBusy}
             onChatSend={handleRefine}
+            onSuggestionAction={handleSuggestionAction}
             onUpdateCartItems={handleUpdateCartItems}
             onCheckout={() => setCheckoutOpen(true)}
             onControlBarAction={handleControlBarAction}

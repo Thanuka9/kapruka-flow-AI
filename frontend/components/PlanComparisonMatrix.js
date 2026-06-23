@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { useEffect } from "react";
 import Icon3D from "./Icon3D";
 
 function getPlanDescription(ver, lang) {
@@ -45,6 +45,20 @@ export default function PlanComparisonMatrix({
   strings = {},
   language = "en-US"
 }) {
+  // Scroll lock + Escape key close
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (e.key === "Escape" && onClose) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
   const versions = ["initial", "cheaper", "premium", "fast"];
   const formattedTotal = (val) =>
     new Intl.NumberFormat("en-LK", {
@@ -54,8 +68,11 @@ export default function PlanComparisonMatrix({
     }).format(val).replace(/\s+/g, " ");
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md overflow-y-auto flex items-center justify-center p-4">
-      <div 
+    <div
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md overflow-y-auto flex items-center justify-center p-4"
+      onMouseDown={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}
+    >
+      <div
         className="w-full max-w-5xl bg-flow-card border border-flow-border rounded-2xl shadow-card overflow-hidden flex flex-col max-h-[90vh] animate-fadeIn"
         onMouseDown={(e) => e.stopPropagation()}
       >
@@ -66,7 +83,7 @@ export default function PlanComparisonMatrix({
               ⚖️ {strings.compare_plans || "Compare Crate Variations"}
             </h3>
             <p className="text-sm text-flow-muted mt-1">
-              Select the best configuration matching your budget, speed, and gifting goals.
+              {strings.compare_plans_sub || "Select the best configuration matching your budget, speed, and gifting goals."}
             </p>
           </div>
           <button
@@ -119,7 +136,7 @@ export default function PlanComparisonMatrix({
                     </span>
                     {isActive && (
                       <span className="text-[10px] font-extrabold uppercase tracking-widest text-kapruka-red bg-kapruka-red/10 px-2 py-0.5 rounded">
-                        Active
+                        {strings.step_current || "Active"}
                       </span>
                     )}
                   </div>
@@ -130,7 +147,9 @@ export default function PlanComparisonMatrix({
                       {formattedTotal(totalCost)}
                     </p>
                     <p className="text-xs text-flow-muted mt-0.5">
-                      {items.length} {items.length === 1 ? "item" : "items"}
+                      {items.length === 1
+                        ? (strings.cart_item_count_one || "{n} item").replace("{n}", 1)
+                        : (strings.cart_item_count_many || "{n} items").replace("{n}", items.length)}
                     </p>
                   </div>
 
@@ -189,7 +208,7 @@ export default function PlanComparisonMatrix({
                           : "bg-kapruka-red hover:bg-kapruka-red-hover text-white shadow-md hover:-translate-y-0.5"
                     }`}
                   >
-                    {isActive ? "Currently Selected" : "Activate Plan"}
+                    {isActive ? (strings.plan_active || "Currently Selected") : (strings.plan_activate || "Activate Plan")}
                   </button>
                 </div>
               );
