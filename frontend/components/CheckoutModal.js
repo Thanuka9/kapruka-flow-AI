@@ -448,7 +448,7 @@ export default function CheckoutModal({
                 <p className="text-base text-slate-400 mt-1">{activeStrings.checkout_sub}</p>
               </div>
 
-              <form id="kapruka-checkout-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              <form id="kapruka-checkout-form" onSubmit={handleSubmit} noValidate className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
                 {/* ── Sender ── */}
                 <div className="checkout-section-1 p-4 rounded-lg bg-white/5 border border-white/5 space-y-4">

@@ -4,6 +4,7 @@ import IntentCanvas from "../components/IntentCanvas";
 import AIWorkspace from "../components/AIWorkspace";
 import CartPanel from "../components/CartPanel";
 import CheckoutModal from "../components/CheckoutModal";
+import PlanComparisonMatrix from "../components/PlanComparisonMatrix";
 import KaprukaHeader from "../components/KaprukaHeader";
 import { LoginModal, ProfileModal } from "../components/AuthModals";
 import { LOCALIZED_STRINGS } from "../components/localization";
@@ -45,6 +46,7 @@ export default function Home() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [categoryHint, setCategoryHint] = useState(null);
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
 
   // Cart Evolution State (array of snapshot objects)
   const [evolution, setEvolution] = useState([]);
@@ -999,6 +1001,10 @@ export default function Home() {
   );
 
   function handleCartClick() {
+    if (pageState === "cart") {
+      setPageState("input");
+      return;
+    }
     const hasCart =
       Object.keys(cartVersions).length > 0 &&
       Object.values(cartVersions).some((v) => Array.isArray(v) && v.length > 0);
@@ -1009,6 +1015,8 @@ export default function Home() {
     const savedSession = localStorage.getItem("kapruka_flow_session_id");
     if (savedSession) {
       restoreSession(savedSession, { goToCart: true });
+    } else {
+      setPageState("cart");
     }
   }
 
@@ -1136,6 +1144,7 @@ export default function Home() {
             }
             clientProfile={buildClientAiProfile(userOrders, getBookmarks())}
             language={currentLanguage}
+            onCompareClick={() => setCompareModalOpen(true)}
           />
         )}
       </main>
@@ -1156,6 +1165,17 @@ export default function Home() {
           onAccountCreated={handleLoginSuccess}
           strings={strings}
           demoMode={demoRan}
+        />
+      )}
+
+      {compareModalOpen && (
+        <PlanComparisonMatrix
+          cartVersions={cartVersions}
+          activeVersion={activeVersion}
+          onSelectVersion={setActiveVersion}
+          onClose={() => setCompareModalOpen(false)}
+          strings={strings}
+          language={currentLanguage}
         />
       )}
 

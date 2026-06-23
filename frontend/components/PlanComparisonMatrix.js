@@ -69,7 +69,7 @@ export default function PlanComparisonMatrix({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md overflow-y-auto flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md overflow-y-auto flex items-start md:items-center justify-center p-4 py-8"
       onMouseDown={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}
     >
       <div
@@ -80,7 +80,7 @@ export default function PlanComparisonMatrix({
         <div className="p-6 border-b border-flow-border flex items-center justify-between">
           <div>
             <h3 className="text-xl font-bold text-flow-text flex items-center gap-2">
-              ⚖️ {strings.compare_plans || "Compare Crate Variations"}
+              <Icon3D name="sparkle" size={20} tilt /> {strings.compare_plans || "Compare Crate Variations"}
             </h3>
             <p className="text-sm text-flow-muted mt-1">
               {strings.compare_plans_sub || "Select the best configuration matching your budget, speed, and gifting goals."}

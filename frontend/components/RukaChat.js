@@ -99,6 +99,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
     suggestions.push({
       id: "GIFT_WRAP",
       icon: "🎀",
+      iconName: "gift",
       label: (strings.suggestion_gift_wrap || "Gift wrap for {occasion}").replace("{occasion}", occ),
       action: "gift",
       payload: {},
@@ -109,6 +110,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
     suggestions.push({
       id: "ADD_CHOCOLATES",
       icon: "🍫",
+      iconName: "gift",
       label: strings.suggestion_add_chocolates || "Add chocolates",
       action: "add_category",
       payload: { category: "chocolates" },
@@ -118,6 +120,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
     suggestions.push({
       id: "ADD_FLOWERS",
       icon: "🌹",
+      iconName: "flower",
       label: strings.suggestion_add_flowers || "Add flowers",
       action: "add_category",
       payload: { category: "flowers" },
@@ -127,6 +130,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
     suggestions.push({
       id: "ADD_CAKE",
       icon: "🎂",
+      iconName: "gift",
       label: strings.suggestion_add_cake || "Add a cake",
       action: "add_category",
       payload: { category: "cake" },
@@ -137,6 +141,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
   suggestions.push({
     id: "CUT_BUDGET",
     icon: "💸",
+    iconName: "coin",
     label: (strings.suggestion_cut_budget || "Cut to Rs {amount}").replace("{amount}", `${formatBudgetShort(cheaper)}`),
     action: "budget",
     payload: { value: cheaper },
@@ -144,6 +149,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
   suggestions.push({
     id: "UPGRADE_PREMIUM",
     icon: "✨",
+    iconName: "star",
     label: (strings.suggestion_upgrade_premium || "Go premium Rs {amount}").replace("{amount}", `${formatBudgetShort(premium)}`),
     action: "plan",
     payload: { value: "premium" },
@@ -153,6 +159,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
   suggestions.push({
     id: "SAME_DAY_DELIVERY",
     icon: "⚡",
+    iconName: "bolt",
     label: strings.suggestion_same_day || "Same-day delivery",
     action: "plan",
     payload: { value: "fast" },
@@ -163,6 +170,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
   suggestions.push({
     id: "CHANGE_CITY",
     icon: "🏙",
+    iconName: "pin",
     label: (strings.suggestion_change_city || "Ship to {city}").replace("{city}", nextCity),
     action: "city",
     payload: { value: nextCity },
@@ -171,6 +179,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
   suggestions.push({
     id: "REBUILD_CART",
     icon: "🔁",
+    iconName: "cart",
     label: strings.suggestion_rebuild || "Rebuild cart",
     action: "rebuild",
     payload: {},
@@ -346,7 +355,7 @@ export default function RukaChat({
               onClick={() => handleSuggClick(sugg)}
               className="chat-sugg-card disabled:opacity-40"
             >
-              <span className="chat-sugg-icon">{sugg.icon}</span>
+              <Icon3D name={sugg.iconName} size={15} tilt className="chat-sugg-icon shrink-0 mr-1.5" />
               <span className="flex-1 truncate">{sugg.label}</span>
               <span className="text-slate-600 text-xs shrink-0">→</span>
             </button>

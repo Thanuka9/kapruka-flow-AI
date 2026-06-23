@@ -21,56 +21,56 @@ function getCategoryEmoji(category, precomputed) {
 
 // ── Curation DNA chip parser ─────────────────────────────────────────
 const OCCASION_KEYWORDS = {
-  "birthday": { key: "birthday", label: "Birthday", emoji: "🎂", type: "occasion" },
-  "birth day": { key: "birthday", label: "Birthday", emoji: "🎂", type: "occasion" },
-  "anniversary": { key: "anniversary", label: "Anniversary", emoji: "💍", type: "occasion" },
-  "wedding": { key: "wedding", label: "Wedding", emoji: "💒", type: "occasion" },
-  "valentine": { key: "valentine", label: "Valentine's", emoji: "💝", type: "occasion" },
-  "mother's day": { key: "mothers_day", label: "Mother's Day", emoji: "🌹", type: "occasion" },
-  "fathers day": { key: "fathers_day", label: "Father's Day", emoji: "👔", type: "occasion" },
-  "christmas": { key: "christmas", label: "Christmas", emoji: "🎄", type: "occasion" },
-  "new year": { key: "new_year", label: "New Year", emoji: "🎆", type: "occasion" },
-  "graduation": { key: "graduation", label: "Graduation", emoji: "🎓", type: "occasion" },
-  "farewell": { key: "farewell", label: "Farewell", emoji: "✈️", type: "occasion" },
-  "get well": { key: "get_well", label: "Get Well", emoji: "🌻", type: "occasion" },
-  "thank you": { key: "thank_you", label: "Thank You", emoji: "🙏", type: "occasion" },
+  "birthday": { key: "birthday", label: "Birthday", emoji: "🎂", icon: "gift", type: "occasion" },
+  "birth day": { key: "birthday", label: "Birthday", emoji: "🎂", icon: "gift", type: "occasion" },
+  "anniversary": { key: "anniversary", label: "Anniversary", emoji: "💍", icon: "gift", type: "occasion" },
+  "wedding": { key: "wedding", label: "Wedding", emoji: "💒", icon: "gift", type: "occasion" },
+  "valentine": { key: "valentine", label: "Valentine's", emoji: "💝", icon: "gift", type: "occasion" },
+  "mother's day": { key: "mothers_day", label: "Mother's Day", emoji: "🌹", icon: "flower", type: "occasion" },
+  "fathers day": { key: "fathers_day", label: "Father's Day", emoji: "👔", icon: "user", type: "occasion" },
+  "christmas": { key: "christmas", label: "Christmas", emoji: "🎄", icon: "box", type: "occasion" },
+  "new year": { key: "new_year", label: "New Year", emoji: "🎆", icon: "sparkle", type: "occasion" },
+  "graduation": { key: "graduation", label: "Graduation", emoji: "🎓", icon: "star", type: "occasion" },
+  "farewell": { key: "farewell", label: "Farewell", emoji: "✈️", icon: "box", type: "occasion" },
+  "get well": { key: "get_well", label: "Get Well", emoji: "🌻", icon: "flower", type: "occasion" },
+  "thank you": { key: "thank_you", label: "Thank You", emoji: "🙏", icon: "flower", type: "occasion" },
 };
 
 const RECIPIENT_KEYWORDS = {
-  "amma": { key: "amma", label: "For Amma", emoji: "👩", type: "recipient" },
-  "mother": { key: "mother", label: "For Mum", emoji: "👩", type: "recipient" },
-  "mom": { key: "mother", label: "For Mum", emoji: "👩", type: "recipient" },
-  "father": { key: "father", label: "For Dad", emoji: "👨", type: "recipient" },
-  "thaththa": { key: "thaththa", label: "For Thaththa", emoji: "👨", type: "recipient" },
-  "dad": { key: "father", label: "For Dad", emoji: "👨", type: "recipient" },
-  "sister": { key: "sister", label: "For Sister", emoji: "👧", type: "recipient" },
-  "brother": { key: "brother", label: "For Brother", emoji: "👦", type: "recipient" },
-  "friend": { key: "friend", label: "For Friend", emoji: "🤝", type: "recipient" },
-  "colleague": { key: "colleague", label: "For Colleague", emoji: "💼", type: "recipient" },
-  "teacher": { key: "teacher", label: "For Teacher", emoji: "📚", type: "recipient" },
-  "girlfriend": { key: "girlfriend", label: "For Her", emoji: "💕", type: "recipient" },
-  "boyfriend": { key: "boyfriend", label: "For Him", emoji: "💙", type: "recipient" },
-  "partner": { key: "partner", label: "For Partner", emoji: "💑", type: "recipient" },
-  "baby": { key: "baby", label: "For Baby", emoji: "👶", type: "recipient" },
-  "kids": { key: "kids", label: "For Kids", emoji: "🧒", type: "recipient" },
-  "grandma": { key: "grandma", label: "For Grandma", emoji: "👵", type: "recipient" },
-  "grandfather": { key: "grandfather", label: "For Grandpa", emoji: "👴", type: "recipient" },
+  "amma": { key: "amma", label: "For Amma", emoji: "👩", icon: "user", type: "recipient" },
+  "mother": { key: "mother", label: "For Mum", emoji: "👩", icon: "user", type: "recipient" },
+  "mom": { key: "mother", label: "For Mum", emoji: "👩", icon: "user", type: "recipient" },
+  "father": { key: "father", label: "For Dad", emoji: "👨", icon: "user", type: "recipient" },
+  "thaththa": { key: "thaththa", label: "For Thaththa", emoji: "👨", icon: "user", type: "recipient" },
+  "dad": { key: "father", label: "For Dad", emoji: "👨", icon: "user", type: "recipient" },
+  "sister": { key: "sister", label: "For Sister", emoji: "👧", icon: "user", type: "recipient" },
+  "brother": { key: "brother", label: "For Brother", emoji: "👦", icon: "user", type: "recipient" },
+  "friend": { key: "friend", label: "For Friend", emoji: "🤝", icon: "user", type: "recipient" },
+  "colleague": { key: "colleague", label: "For Colleague", emoji: "💼", icon: "user", type: "recipient" },
+  "teacher": { key: "teacher", label: "For Teacher", emoji: "📚", icon: "user", type: "recipient" },
+  "girlfriend": { key: "girlfriend", label: "For Her", emoji: "💕", icon: "user", type: "recipient" },
+  "boyfriend": { key: "boyfriend", label: "For Him", emoji: "💙", icon: "user", type: "recipient" },
+  "partner": { key: "partner", label: "For Partner", emoji: "💑", icon: "user", type: "recipient" },
+  "baby": { key: "baby", label: "For Baby", emoji: "👶", icon: "user", type: "recipient" },
+  "kids": { key: "kids", label: "For Kids", emoji: "🧒", icon: "user", type: "recipient" },
+  "grandma": { key: "grandma", label: "For Grandma", emoji: "👵", icon: "user", type: "recipient" },
+  "grandfather": { key: "grandfather", label: "For Grandpa", emoji: "👴", icon: "user", type: "recipient" },
 };
 
 const SENTIMENT_KEYWORDS = {
-  "heartfelt": { key: "heartfelt", label: "Heartfelt", emoji: "💝", type: "sentiment" },
-  "premium": { key: "premium", label: "Premium", emoji: "✨", type: "sentiment" },
-  "luxur": { key: "luxury", label: "Luxury", emoji: "👑", type: "sentiment" },
-  "budget": { key: "budget", label: "Value Pick", emoji: "💸", type: "sentiment" },
-  "popular": { key: "popular", label: "Popular", emoji: "⭐", type: "sentiment" },
-  "fresh": { key: "fresh", label: "Fresh", emoji: "🌿", type: "sentiment" },
-  "classic": { key: "classic", label: "Classic", emoji: "🏛️", type: "sentiment" },
-  "surprise": { key: "surprise", label: "Surprise", emoji: "🎉", type: "sentiment" },
-  "romantic": { key: "romantic", label: "Romantic", emoji: "🌹", type: "sentiment" },
-  "healthy": { key: "healthy", label: "Healthy", emoji: "🥗", type: "sentiment" },
-  "traditional": { key: "traditional", label: "Traditional", emoji: "🏺", type: "sentiment" },
-  "best seller": { key: "best_seller", label: "Best Seller", emoji: "🔥", type: "sentiment" },
-  "handpicked": { key: "handpicked", label: "Handpicked", emoji: "🤌", type: "sentiment" },
+  "heartfelt": { key: "heartfelt", label: "Heartfelt", emoji: "💝", icon: "gift", type: "sentiment" },
+  "premium": { key: "premium", label: "Premium", emoji: "✨", icon: "star", type: "sentiment" },
+  "luxur": { key: "luxury", label: "Luxury", emoji: "👑", icon: "star", type: "sentiment" },
+  "budget": { key: "budget", label: "Value Pick", emoji: "💸", icon: "coin", type: "sentiment" },
+  "popular": { key: "popular", label: "Popular", emoji: "⭐", icon: "star", type: "sentiment" },
+  "fresh": { key: "fresh", label: "Fresh", emoji: "🌿", icon: "flower", type: "sentiment" },
+  "classic": { key: "classic", label: "Classic", emoji: "🏛️", icon: "box", type: "sentiment" },
+  "surprise": { key: "surprise", label: "Surprise", emoji: "🎉", icon: "gift", type: "sentiment" },
+  "romantic": { key: "romantic", label: "Romantic", emoji: "🌹", icon: "flower", type: "sentiment" },
+  "healthy": { key: "healthy", label: "Healthy", emoji: "🥗", icon: "flower", type: "sentiment" },
+  "traditional": { key: "traditional", label: "Traditional", emoji: "🏺", icon: "box", type: "sentiment" },
+  "best seller": { key: "best_seller", label: "Best Seller", emoji: "🔥", icon: "bolt", type: "sentiment" },
+  "handpicked": { key: "handpicked", label: "Handpicked", emoji: "🤌", icon: "sparkle", type: "sentiment" },
 };
 
 function parseDnaChips(reason) {
@@ -286,7 +286,7 @@ export default function ProductCard({
               const label = activeStrings[key] || chip.label;
               return (
                 <span key={i} className={DNA_CHIP_CLASS[chip.type] || "dna-chip dna-chip-sentiment"}>
-                  {chip.emoji} {label}
+                  <Icon3D name={chip.icon} size={12} tilt /> {label}
                 </span>
               );
             })}

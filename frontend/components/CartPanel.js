@@ -4,7 +4,6 @@ import ProductCard from "./ProductCard";
 import PlanDiff, { computePlanDiff } from "./PlanDiff";
 import ShareFlowButton from "./ShareFlowButton";
 import CurationReport from "./CurationReport";
-import PlanComparisonMatrix from "./PlanComparisonMatrix";
 import RukaChat from "./RukaChat";
 import Icon3D from "./Icon3D";
 import { getMcpToolLabel } from "./localization";
@@ -34,6 +33,7 @@ export default function CartPanel({
   catalogProducts = [],
   clientProfile = null,
   language = "en-US",
+  onCompareClick,
 }) {
   const demoCompact = false;
   const items = cartVersions[activeVersion] ?? [];
@@ -86,7 +86,6 @@ export default function CartPanel({
 
   const [fetchedAlternatives, setFetchedAlternatives] = useState([]);
   const [altLoading, setAltLoading] = useState(false);
-  const [compareModalOpen, setCompareModalOpen] = useState(false);
 
   // Slider budget state
   const [sliderBudget, setSliderBudget] = useState(budgetLimit);
@@ -324,10 +323,11 @@ export default function CartPanel({
           </p>
           <button
             type="button"
-            onClick={() => setCompareModalOpen(true)}
+            onClick={onCompareClick}
             className="text-xs font-bold text-kapruka-gold hover:text-kapruka-gold/80 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/8 hover:bg-white/8"
           >
-            {activeStrings.compare_versions || "⚖️ Compare Versions"}
+            <Icon3D name="sparkle" size={14} tilt />
+            {activeStrings.compare_versions || "Compare Versions"}
           </button>
         </div>
 
@@ -828,17 +828,6 @@ export default function CartPanel({
         )}
 
       </div>
-
-      {compareModalOpen && (
-        <PlanComparisonMatrix
-          cartVersions={cartVersions}
-          activeVersion={activeVersion}
-          onSelectVersion={onVersionChange}
-          onClose={() => setCompareModalOpen(false)}
-          strings={activeStrings}
-          language={language}
-        />
-      )}
     </div>
   );
 }
