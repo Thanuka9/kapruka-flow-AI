@@ -76,15 +76,53 @@ function DeliveryTracker({ deliveryDate }) {
   );
 }
 
-function GiftCardPreview({ message }) {
+function GiftCardPreview({ message, theme }) {
   if (!message || message.trim().length < 3) return null;
+  const styles = {
+    classic: {
+      background: "linear-gradient(135deg, #1b150c 0%, #2f2515 100%)",
+      border: "1px solid #d4af37",
+      color: "#f3e5ab",
+      fontFamily: "Georgia, serif"
+    },
+    romantic: {
+      background: "linear-gradient(135deg, #2c0b0e 0%, #50161b 100%)",
+      border: "1px solid #e31b23",
+      color: "#ffcdd2",
+      fontFamily: "'Courier New', Courier, monospace"
+    },
+    comfort: {
+      background: "linear-gradient(135deg, #0b1a2c 0%, #162f4c 100%)",
+      border: "1px solid #4a90e2",
+      color: "#d0e1fd",
+      fontFamily: "system-ui, sans-serif"
+    },
+    celebration: {
+      background: "linear-gradient(135deg, #1b0f35 0%, #3a2273 100%)",
+      border: "1px solid #a855f7",
+      color: "#f3e8ff",
+      fontFamily: "system-ui, sans-serif"
+    }
+  };
+
+  const themeStyle = styles[theme] || styles.classic;
+  const themeLabel = {
+    classic: "⚜️ Classic Gold Card",
+    romantic: "❤️ Romantic Red Card",
+    comfort: "💙 Comforting Blue Card",
+    celebration: "🎉 Celebration Card"
+  }[theme] || "✉ Gift Card";
+
   return (
-    <div className="gift-card-preview mt-2">
-      <div className="text-xs uppercase tracking-widest text-kapruka-gold/60 mb-1.5 font-sans">
-        ✉ Gift Card Preview
+    <div
+      style={themeStyle}
+      className="gift-card-preview mt-3 p-4 rounded-lg shadow-inner text-center border transition-all duration-300 transform hover:scale-[1.01]"
+    >
+      <div className="text-[10px] uppercase tracking-widest opacity-60 mb-2 font-sans">
+        {themeLabel}
       </div>
-      <p className="italic">{message}</p>
-      <div className="text-right text-xs text-kapruka-gold/40 mt-2 font-sans tracking-wide">— Kapruka</div>
+      <p className="italic text-sm leading-relaxed whitespace-pre-line px-2 font-sans font-medium">"{message}"</p>
+      <div className="text-right text-[10px] opacity-40 mt-3 font-sans tracking-wide">— Kapruka Flow Concierge</div>
     </div>
   );
 }
@@ -148,6 +186,28 @@ export default function CheckoutModal({
   const [guestEmail, setGuestEmail] = useState("");
   const [createAccount, setCreateAccount] = useState(false);
   const [accountPassword, setAccountPassword] = useState("");
+
+  const [deliverySpeed, setDeliverySpeed] = useState("scheduled");
+  const [localDeliveryFee, setLocalDeliveryFee] = useState(deliveryFee || 300);
+  const [giftCardTheme, setGiftCardTheme] = useState("classic");
+  const effectiveEmail = email || guestEmail;
+
+  const getTodayString = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const getTomorrowString = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const yyyy = tomorrow.getFullYear();
+    const mm = String(tomorrow.getMonth() + 1).padStart(2, "0");
+    const dd = String(tomorrow.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -336,7 +396,8 @@ export default function CheckoutModal({
           delivery_date: date,
           delivery_instructions: combinedInstructions,
           gift_message: giftMessage,
-          email: effectiveEmail
+          email: effectiveEmail,
+          delivery_option: deliverySpeed
         })
       });
 
@@ -388,7 +449,7 @@ export default function CheckoutModal({
     }
   }
 
-  const formattedTotal = formatCurrency((totalCost || 0) + deliveryFee);
+  const formattedTotal = formatCurrency((totalCost || 0) + localDeliveryFee);
 
   function handleShare() {
     const text = `🎁 Kapruka Order #${orderResult?.order_number || "—"} placed!\nTotal: ${formattedTotal}\nTracking via Kapruka Flow AI → https://kapruka-flow-ai.vercel.app`;
@@ -544,10 +605,81 @@ export default function CheckoutModal({
                       )}
                     </div>
                     <div>
-                      <div className="float-label-group">
-                        <input type="date" required value={date} onChange={(e) => setDate(e.target.value)} placeholder=" " className="w-full p-3 text-sm input-premium bg-[#1f173b]" />
-                        <label>{activeStrings.preferred_date}</label>
+                      {/* Visual Delivery Speed Selection Card Deck */}
+                      <div className="space-y-2.5 mb-4">
+                        <label className="block text-xs font-bold text-[#fae555] uppercase tracking-wider">
+                          {activeStrings.delivery_speed_label || "Select Delivery Speed"}
+                        </label>
+                        <div className="grid grid-cols-3 gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeliverySpeed("same-day");
+                              setDate(getTodayString());
+                              setLocalDeliveryFee(600);
+                            }}
+                            className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center transition-all cursor-pointer ${
+                              deliverySpeed === "same-day"
+                                ? "border-[#fae555] bg-[#fae555]/10 text-white"
+                                : "border-white/10 bg-white/5 text-slate-300 hover:border-white/20"
+                            }`}
+                          >
+                            <span className="text-xl">⚡</span>
+                            <span className="text-xs font-bold mt-1">Same-Day</span>
+                            <span className="text-[10px] text-slate-400 mt-0.5">LKR 600</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeliverySpeed("next-day");
+                              setDate(getTomorrowString());
+                              setLocalDeliveryFee(400);
+                            }}
+                            className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center transition-all cursor-pointer ${
+                              deliverySpeed === "next-day"
+                                ? "border-[#fae555] bg-[#fae555]/10 text-white"
+                                : "border-white/10 bg-white/5 text-slate-300 hover:border-white/20"
+                            }`}
+                          >
+                            <span className="text-lg">🚀</span>
+                            <span className="text-xs font-bold mt-1">Next-Day</span>
+                            <span className="text-[10px] text-slate-400 mt-0.5">LKR 400</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeliverySpeed("scheduled");
+                              setLocalDeliveryFee(300);
+                              setDate(getTomorrowString());
+                            }}
+                            className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center transition-all cursor-pointer ${
+                              deliverySpeed === "scheduled"
+                                ? "border-[#fae555] bg-[#fae555]/10 text-white"
+                                : "border-white/10 bg-white/5 text-slate-300 hover:border-white/20"
+                            }`}
+                          >
+                            <span className="text-lg">📅</span>
+                            <span className="text-xs font-bold mt-1">Scheduled</span>
+                            <span className="text-[10px] text-slate-400 mt-0.5">LKR 300</span>
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Render Scheduled Date Picker only when Scheduled is selected */}
+                      {deliverySpeed === "scheduled" && (
+                        <div className="float-label-group animate-fadeIn mb-4">
+                          <input
+                            type="date"
+                            required
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            placeholder=" "
+                            className="w-full p-3 text-sm input-premium bg-[#1f173b]"
+                          />
+                          <label>{activeStrings.preferred_date}</label>
+                        </div>
+                      )}
+                      
                       {fieldErrors.date && (
                         <p className="text-red-500 text-xs mt-1 pl-1 animate-fadeIn">{fieldErrors.date}</p>
                       )}
@@ -588,13 +720,67 @@ export default function CheckoutModal({
                     </div>
                   </div>
 
-                  <div>
+                  {/* Gift Card Message area with Theme picker & prefill templates */}
+                  <div className="space-y-4 pt-2 border-t border-white/5">
                     <div className="float-label-group">
                       <textarea rows="2" value={giftMessage} onChange={(e) => setGiftMessage(e.target.value)} placeholder=" " className="w-full p-3 text-sm input-premium" />
                       <label>{activeStrings.gift_card_msg_opt}</label>
                     </div>
+
+                    {/* Quick Prefill Templates */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-400">
+                        {activeStrings.gift_card_templates_label || "Quick Templates"}
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { label: "🎂 Birthday", text: activeStrings.gift_card_template_birthday || "Happy Birthday! Wishing you a wonderful day filled with joy." },
+                          { label: "🤝 Sympathy", text: activeStrings.gift_card_template_sympathy || "With deepest sympathy. Keeping you in our thoughts and prayers." },
+                          { label: "🎉 Congrats", text: activeStrings.gift_card_template_congrats || "Congratulations on this amazing achievement! So proud of you!" },
+                          { label: "🏥 Get Well", text: activeStrings.gift_card_template_getwell || "Get well soon! Wishing you a speedy and comfortable recovery." }
+                        ].map((tpl) => (
+                          <button
+                            key={tpl.label}
+                            type="button"
+                            onClick={() => setGiftMessage(tpl.text)}
+                            className="text-[11px] py-1.5 px-3 rounded-md bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                          >
+                            {tpl.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Theme Picker */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-400">
+                        {activeStrings.gift_card_style_label || "Select Gift Card Theme"}
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { id: "classic", label: "⚜️ Classic" },
+                          { id: "romantic", label: "❤️ Romantic" },
+                          { id: "comfort", label: "💙 Comfort" },
+                          { id: "celebration", label: "🎉 Celebration" }
+                        ].map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setGiftCardTheme(t.id)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                              giftCardTheme === t.id
+                                ? "border-[#fae555] bg-[#fae555]/15 text-white"
+                                : "border-white/10 bg-white/5 text-slate-400 hover:border-white/20 hover:text-white"
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Live gift card preview */}
-                    <GiftCardPreview message={giftMessage} />
+                    <GiftCardPreview message={giftMessage} theme={giftCardTheme} />
                   </div>
                 </div>
               </form>

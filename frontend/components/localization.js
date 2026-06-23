@@ -364,7 +364,23 @@ export const LOCALIZED_STRINGS = {
     dna_sentiment_healthy: "Healthy",
     dna_sentiment_traditional: "Traditional",
     dna_sentiment_best_seller: "Best Seller",
-    dna_sentiment_handpicked: "Handpicked"
+    dna_sentiment_handpicked: "Handpicked",
+    // Concierge enhancements
+    complementary: "Concierge Pick",
+    accessory: "Accessory",
+    delivery_option_same_day: "⚡ Same-day Delivery (LKR 600)",
+    delivery_option_next_day: "🚀 Next-day Delivery (LKR 400)",
+    delivery_option_scheduled: "📅 Scheduled Delivery (LKR 300)",
+    gift_card_style_label: "Select Gift Card Theme",
+    gift_card_style_classic: "Classic Gold",
+    gift_card_style_romantic: "Romantic Red",
+    gift_card_style_comfort: "Comforting Blue",
+    gift_card_style_celebration: "Celebration Party",
+    gift_card_templates_label: "Quick Templates",
+    gift_card_template_birthday: "Happy Birthday! Wishing you a wonderful day filled with joy.",
+    gift_card_template_sympathy: "With deepest sympathy. Keeping you in our thoughts and prayers.",
+    gift_card_template_congrats: "Congratulations on this amazing achievement! So proud of you!",
+    gift_card_template_getwell: "Get well soon! Wishing you a speedy and comfortable recovery."
   },
   "si-LK": {
     search_placeholder: "භාණ්ඩ සොයන්න..",
@@ -731,7 +747,23 @@ export const LOCALIZED_STRINGS = {
     dna_sentiment_healthy: "සෞඛ්‍ය සම්පන්න",
     dna_sentiment_traditional: "සාම්ප්‍රදායික",
     dna_sentiment_best_seller: "වැඩිපුරම අලෙවි වන",
-    dna_sentiment_handpicked: "තෝරාගත්"
+    dna_sentiment_handpicked: "තෝරාගත්",
+    // Concierge enhancements
+    complementary: "විශේෂ තේරීම",
+    accessory: "අමතර උපාංග",
+    delivery_option_same_day: "⚡ එදිනම බෙදාහැරීම (LKR 600)",
+    delivery_option_next_day: "🚀 පසුදාම බෙදාහැරීම (LKR 400)",
+    delivery_option_scheduled: "📅 වෙනත් දිනක (LKR 300)",
+    gift_card_style_label: "තෑගි පතෙහි තේමාව තෝරන්න",
+    gift_card_style_classic: "සම්භාව්‍ය රන්වන්",
+    gift_card_style_romantic: "රොමැන්ටික් රතු",
+    gift_card_style_comfort: "සැනසිලිදායක නිල්",
+    gift_card_style_celebration: "සැමරුම් සාද",
+    gift_card_templates_label: "ඉක්මන් ප්‍රකාශන",
+    gift_card_template_birthday: "සුභ උපන්දිනයක් වේවා! සතුටින් පිරුණු සුන්දර දවසක් ප්‍රාර්ථනා කරමි.",
+    gift_card_template_sympathy: "අපගේ බලවත් කණගාටුව. ඔබ සැම අපගේ සිතුවිලි සහ යාච්ඤා තුළ රඳවා ගනිමු.",
+    gift_card_template_congrats: "ඔබගේ මෙම ජයග්‍රහණය පිළිබඳව ඉතා සතුටුයි! සුභ පැතුම්!",
+    gift_card_template_getwell: "ඔබට ඉක්මන් සුවය ප්‍රාර්ථනා කරමු! ඉක්මනින් සුවපත් වේවා."
   },
   "en-LK": {
     search_placeholder: "Search products…",
@@ -1098,7 +1130,23 @@ export const LOCALIZED_STRINGS = {
     dna_sentiment_healthy: "Healthy",
     dna_sentiment_traditional: "Traditional",
     dna_sentiment_best_seller: "Best Seller",
-    dna_sentiment_handpicked: "Handpicked"
+    dna_sentiment_handpicked: "Handpicked",
+    // Concierge enhancements
+    complementary: "Concierge Pick eka",
+    accessory: "Accessory eka",
+    delivery_option_same_day: "⚡ Same-day Delivery (LKR 600)",
+    delivery_option_next_day: "🚀 Next-day Delivery (LKR 400)",
+    delivery_option_scheduled: "📅 Scheduled Delivery (LKR 300)",
+    gift_card_style_label: "Gift Card Theme eka select කරන්න",
+    gift_card_style_classic: "Classic Gold",
+    gift_card_style_romantic: "Romantic Red",
+    gift_card_style_comfort: "Comforting Blue",
+    gift_card_style_celebration: "Celebration Party",
+    gift_card_templates_label: "Quick Templates",
+    gift_card_template_birthday: "Happy Birthday machan! Have a wonderful day!",
+    gift_card_template_sympathy: "Hitha shakthimath karaganna machan. Deepest sympathy.",
+    gift_card_template_congrats: "Wow congratz machan! Great achievement!",
+    gift_card_template_getwell: "Get well soon machan! Ikmanata saneepa wenna!"
   }
 };
 

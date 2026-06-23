@@ -648,6 +648,100 @@ def build_search_queries(
     return unique[:6]
 
 
+def _detect_sentiment_tone(text: str) -> str:
+    lower = text.lower()
+    comfort_keywords = [
+        "breakup",
+        "broken heart",
+        "divorce",
+        "grief",
+        "loss",
+        "sorry",
+        "sad",
+        "death",
+        "funeral",
+        "mourning",
+        "hospital",
+        "sick",
+        "get well",
+        "depressed",
+        "lonely",
+        "crying",
+        "pain",
+        "illness",
+        "accident",
+        "condolence",
+        "sympathy",
+        "miss you",
+        "කණගාටු",
+        "දුක",
+        "මළ",
+        "අසනීප",
+        "අපරාදේ",
+        "හදවත",
+        "අසීරු",
+        "මරණ",
+        "ලෙඩ",
+        "නිවන් සුව",
+        "kanagatui",
+        "kanagatu",
+        "dukai",
+        "duka",
+        "asaneepa",
+        "asaneepai",
+        "ledawela",
+        "nathiuna",
+        "malagedara",
+        "aparade",
+        "hadawatha riduna",
+        "niwan suwa",
+        "leda",
+        "hospital",
+    ]
+    celebrate_keywords = [
+        "promotion",
+        "congrats",
+        "congratulations",
+        "graduated",
+        "success",
+        "achieve",
+        "passed",
+        "won",
+        "celebrate",
+        "celebration",
+        "party",
+        "cheers",
+        "holiday",
+        "wedding",
+        "anniversary",
+        "සුභ",
+        "සතුටු",
+        "සමර",
+        "ජයවේවා",
+        "ශා",
+        "subha",
+        "sathutu",
+        "sathutui",
+        "samaranna",
+        "jayawewa",
+        "congratz",
+        "passed",
+        "wedding",
+        "elakiri",
+        "maru",
+        "pissu korala",
+        "pinsiduwewa",
+        "shaa",
+    ]
+    for kw in comfort_keywords:
+        if kw in lower:
+            return "empathetic_comfort"
+    for kw in celebrate_keywords:
+        if kw in lower:
+            return "joyful_celebration"
+    return "standard"
+
+
 def parse_intent_mcp(
     user_text: str,
     client_language: Optional[str] = None,
@@ -682,6 +776,7 @@ def parse_intent_mcp(
 
     budget_inferred = budget is None
     effective_budget = budget if budget is not None else 25000.0
+    tone = _detect_sentiment_tone(text)
 
     return {
         "search_queries": queries,
@@ -692,16 +787,28 @@ def parse_intent_mcp(
         "quantity_hint": quantity_hint,
         "language": lang,
         "city": city,
-        "gift_mode": gift_mode,
+        "gift_mode": gift_mode or (tone == "empathetic_comfort"),
         "occasion": occasion,
         "recipient": recipient,
         "delivery_speed": delivery_speed,
-        "gift_message": _gift_message(lang, occasion, recipient) if gift_mode else "",
+        "tone": tone,
+        "gift_message": _gift_message(lang, occasion, recipient, tone)
+        if (gift_mode or tone == "empathetic_comfort")
+        else "",
         "user_profile_applied": bool(user_profile),
     }
 
 
-def _gift_message(lang: str, occasion: Optional[str], recipient: Optional[str]) -> str:
+def _gift_message(
+    lang: str, occasion: Optional[str], recipient: Optional[str], tone: str = "standard"
+) -> str:
+    if tone == "empathetic_comfort":
+        if lang == "si":
+            return "මේ අපහසු මොහොතේ මගේ බලවත් කණගාටුව ප්‍රකාශ කරමි. ඔබට සැනසීම හා ශක්තිය ප්‍රාර්ථනා කරමි."
+        if lang == "tanglish":
+            return "Me amaru wele mage kanagatuwa prakasha karanawa. Hitha shakthimath karaganna. Sending love."
+        return "Thinking of you during this difficult time. Sending love and comforting wishes."
+
     occasion_en = {
         "birthday": "Happy Birthday!",
         "anniversary": "Happy Anniversary!",
@@ -1055,7 +1162,6 @@ def build_carts_mcp(
     delivery_fee: float,
     user_profile: Optional[Dict] = None,
 ) -> Dict[str, Any]:
-    lang = intent.get("language", "en")
     budget = float(intent.get("budget", 25000) or 25000)
 
     # Expose profile + bookmark signals to the relevance engine.
@@ -1193,7 +1299,27 @@ def _build_story(
             f"Delivery to {canonical_city} — fee LKR {delivery_fee:,.0f}. Compare Cheaper, Premium and Fast plans on the right.",
         ]
 
-    for note in (occasion_note, profile_note, saved_note):
+    # Empathetic Tone Adjustment
+    tone = intent.get("tone", "standard")
+    tone_note = ""
+    if tone == "empathetic_comfort":
+        if lang == "si":
+            tone_note = "සිදුවූ අපහසුතාවය/කණගාටුව පිළිබඳව මාගේ කණගාටුව පළ කරමි. ඔබට සැනසීමක් ගෙනදීමට හැකි දේ මෙහි ඇතුළත් කර ඇත. ❤️"
+        elif lang == "tanglish":
+            tone_note = "Harima kanagatui me gana ahanna. Oyaata podi comfort ekak weyi kiyala hithala me items select kala. ❤️"
+        else:
+            tone_note = "I'm so sorry to hear about this difficult situation. I want to help make things a little easier, so I have curated comforting items. ❤️"
+    elif tone == "joyful_celebration":
+        if lang == "si":
+            tone_note = (
+                "ඇත්තටම සතුටුයි! සුභ පැතුම්! 🎉 මේ විශේෂ මොහොත සමරන්න හොඳම දේ මෙහි ඇතුළත් කර ඇත."
+            )
+        elif lang == "tanglish":
+            tone_note = "Wow, niyamai! Congratz! 🎉 Me special moment eka celebrate karanna lassanama items select kala."
+        else:
+            tone_note = "Wow, that is wonderful news! Congratulations! 🎉 I've put together some celebratory options to mark this special milestone."
+
+    for note in (occasion_note, profile_note, saved_note, tone_note):
         if note:
             story.append(note)
     return story

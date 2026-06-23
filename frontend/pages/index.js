@@ -872,6 +872,27 @@ export default function Home() {
         setChatBusy(false);
         handleStartBuild(lastPrompt || "gifts", currentLanguage, metadata.budget_limit);
         return;
+      } else if (action === "rebuild_prompt") {
+        pushAgent(s.chat_reply_rebuild || "Rebuilding your curated cart...");
+        setChatBusy(false);
+        handleStartBuild(payload.query, currentLanguage, metadata.budget_limit);
+        return;
+      } else if (action === "delivery_date") {
+        const option = payload.option || "scheduled";
+        if (option === "same_day") {
+          if (cartVersions["fast"] && cartVersions["fast"].length > 0) {
+            setActiveVersion("fast");
+          }
+          pushAgent(s.chat_reply_fast || "Switched to fast delivery plan. ⚡");
+        } else {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const yyyy = tomorrow.getFullYear();
+          const mm = String(tomorrow.getMonth() + 1).padStart(2, "0");
+          const dd = String(tomorrow.getDate()).padStart(2, "0");
+          const dateStr = `${yyyy}-${mm}-${dd}`;
+          pushAgent(fmt(s.chat_reply_delivery_date || "Scheduled delivery for tomorrow ({date}). 📅", { date: dateStr }));
+        }
       } else {
         setChatBusy(false);
         await handleRefine(payload.query || payload.category || "");

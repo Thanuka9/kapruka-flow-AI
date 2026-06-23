@@ -207,26 +207,113 @@ export default function CartPanel({
     );
     if (avail.length === 0) return [];
 
-    const sorted = [...avail].sort((a, b) => priceOf(a) - priceOf(b));
+    const COMPLEMENTARY_MAP = {
+      cake: ["candle", "balloon", "card", "party", "hat"],
+      flower: ["card", "chocolate", "teddy", "rose", "bouquet"],
+      roses: ["card", "chocolate", "teddy", "rose", "bouquet"],
+      bouquet: ["card", "chocolate", "teddy", "rose", "bouquet"],
+      tea: ["cookie", "biscuit", "sugar", "mug", "honey"],
+      coffee: ["cookie", "biscuit", "sugar", "mug", "maker"],
+      groceries: ["oil", "milk", "spice", "dhal", "noodle"],
+      rice: ["oil", "milk", "spice", "dhal", "noodle"],
+      chocolate: ["card", "flower", "teddy"],
+      toy: ["card", "chocolate", "wrap"],
+      teddy: ["card", "chocolate", "wrap"],
+      phone: ["charger", "cable", "battery", "adapter"],
+      headphone: ["charger", "cable", "battery", "adapter"],
+      electronics: ["charger", "cable", "battery", "adapter"],
+      household: ["towel", "spice", "soap", "cleaner"],
+      cookware: ["towel", "spice", "soap", "cleaner"],
+      baby: ["wipe", "soap", "toy", "diaper"],
+      perfume: ["card", "flower"],
+      jewellery: ["flower", "card", "chocolate"],
+      clothing: ["cologne", "watch", "sunglass"],
+      books: ["bookmark", "notebook", "tea"]
+    };
+
+    const targetKeywords = [];
+    const hasElectronics = items.some(it => {
+      const c = String(it.category || "").toLowerCase();
+      const n = String(it.name || "").toLowerCase();
+      return c.includes("electronics") || c.includes("electronic") || n.includes("phone") || n.includes("headphone") || n.includes("speaker");
+    });
+
+    items.forEach(it => {
+      const cat = String(it.category || "").toLowerCase();
+      const name = String(it.name || "").toLowerCase();
+      
+      Object.keys(COMPLEMENTARY_MAP).forEach(key => {
+        if (cat.includes(key) || name.includes(key)) {
+          COMPLEMENTARY_MAP[key].forEach(w => targetKeywords.push(w));
+        }
+      });
+    });
+
+    const averageItemPrice = items.length > 0 ? subtotal / items.length : budgetLimit / 4;
+    // Suggestion price cap ensures we don't suggest items that are disproportionately expensive
+    const priceLimit = Math.max(averageItemPrice * 1.5, 4500);
+
+    const scoredAvail = avail.map(p => {
+      const pName = String(p.name || "").toLowerCase();
+      const pCat = String(p.category || "").toLowerCase();
+      const pPrice = priceOf(p);
+
+      if (pPrice > priceLimit) {
+        return { ...p, _score: 0 };
+      }
+
+      let isComplementary = false;
+      let isAccessory = false;
+
+      targetKeywords.forEach(kw => {
+        if (pName.includes(kw) || pCat.includes(kw)) {
+          isComplementary = true;
+          if (hasElectronics && ["charger", "cable", "battery", "adapter"].some(w => pName.includes(w) || pCat.includes(w))) {
+            isAccessory = true;
+          }
+        }
+      });
+
+      return {
+        ...p,
+        _isComplementary: isComplementary,
+        _isAccessory: isAccessory,
+        _score: isComplementary ? 100 - (pPrice / 1000) : 0
+      };
+    });
+
+    const sorted = [...scoredAvail].sort((a, b) => {
+      if (a._score !== b._score) {
+        return b._score - a._score;
+      }
+      return priceOf(a) - priceOf(b);
+    });
+
     const headroom = budgetLimit - total;
     const picks = [];
     const push = (p) => {
       if (p && !picks.some((x) => x.id === p.id)) picks.push(p);
     };
 
+    // Prioritize complementary matches first, then fallbacks
+    const complementaryMatches = sorted.filter(x => x._isComplementary);
+    const regularMatches = sorted.filter(x => !x._isComplementary);
+
+    complementaryMatches.slice(0, 3).forEach(push);
     crossPlan.slice(0, 2).forEach(push);
+
     if (headroom <= 0) {
-      sorted.slice(0, 4).forEach(push);
+      regularMatches.slice(0, 4).forEach(push);
     } else {
-      const fits = sorted.filter((p) => priceOf(p) <= headroom);
-      const overs = sorted.filter((p) => priceOf(p) > headroom);
+      const fits = regularMatches.filter((p) => priceOf(p) <= headroom);
+      const overs = regularMatches.filter((p) => priceOf(p) > headroom);
       if (fits.length) {
         push(fits[0]);
         push(fits[Math.floor(fits.length / 2)]);
         push(fits[fits.length - 1]);
       }
       if (overs.length) push(overs[0]);
-      for (const p of sorted) {
+      for (const p of regularMatches) {
         if (picks.length >= 6) break;
         push(p);
       }
@@ -431,18 +518,26 @@ export default function CartPanel({
                     <div key={candidate.id} className="relative">
                       <span
                         className={`absolute -top-1.5 left-3 z-10 px-2 py-0.5 rounded-pill text-xs font-medium border shadow-sm ${
-                          candidate._plan
-                            ? "bg-blue-50 text-blue-700 border-blue-200"
-                            : cheaper
-                              ? "bg-green-50 text-semantic-success border-green-200"
-                              : "bg-amber-50 text-amber-700 border-amber-200"
+                          candidate._isAccessory
+                            ? "bg-purple-50 text-purple-700 border-purple-200"
+                            : candidate._isComplementary
+                              ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                              : candidate._plan
+                                ? "bg-blue-50 text-blue-700 border-blue-200"
+                                : cheaper
+                                  ? "bg-green-50 text-semantic-success border-green-200"
+                                  : "bg-amber-50 text-amber-700 border-amber-200"
                         }`}
                       >
-                        {candidate._plan
-                          ? `${candidate._plan.charAt(0).toUpperCase()}${candidate._plan.slice(1)} plan`
-                          : cheaper
-                            ? `▼ ${activeStrings.lower_price}`
-                            : `▲ ${activeStrings.higher_price}`}
+                        {candidate._isAccessory
+                          ? `🔌 ${activeStrings.accessory || "Accessory"}`
+                          : candidate._isComplementary
+                            ? `✨ ${activeStrings.complementary || "Concierge Pick"}`
+                            : candidate._plan
+                              ? `${candidate._plan.charAt(0).toUpperCase()}${candidate._plan.slice(1)} plan`
+                              : cheaper
+                                ? `▼ ${activeStrings.lower_price}`
+                                : `▲ ${activeStrings.higher_price}`}
                       </span>
                       <ProductCard
                         product={candidate}

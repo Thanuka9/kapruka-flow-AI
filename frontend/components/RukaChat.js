@@ -19,6 +19,14 @@ function deliveryPillLabel(speed, strings) {
 function buildGreeting(metadata, strings, prompt) {
   const intent = metadata?.intent_parsed || {};
   const s = strings || {};
+  const tone = intent.tone || "standard";
+
+  if (tone === "empathetic_comfort") {
+    return s.greeting_comfort || "I'm so sorry to hear about this difficult situation. I want to help make things a little easier, so I have curated comforting options. ❤️";
+  }
+  if (tone === "joyful_celebration") {
+    return s.greeting_celebration || "Wow, that is wonderful news! Congratulations! 🎉 I've put together some celebratory options to mark this special milestone.";
+  }
 
   const cleanKey = (k) =>
     String(k || "")
@@ -90,13 +98,94 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
   const budget = metadata?.budget_limit ?? 25000;
   const cheaper = Math.round(budget * 0.7);
   const premium = Math.round(budget * 1.4);
+  const tone = intent.tone || "standard";
 
-  const suggestions = [];
+  const primary = [];
+  const secondary = [];
 
-  // Context-aware first suggestion
+  // 1. Context-aware occasion prompt suggestions
+  if (!intent.occasion) {
+    primary.push({
+      id: "OCC_BIRTHDAY",
+      icon: "🎂",
+      iconName: "gift",
+      label: strings.suggest_birthday || "Is this for a Birthday? 🎂",
+      action: "rebuild_prompt",
+      payload: { query: "birthday gift hamper" },
+    });
+    primary.push({
+      id: "OCC_ANNIVERSARY",
+      icon: "💑",
+      iconName: "gift",
+      label: strings.suggest_anniversary || "Is this for an Anniversary? 💑",
+      action: "rebuild_prompt",
+      payload: { query: "anniversary flowers cake" },
+    });
+  }
+
+  // 2. Budget prompt suggestions
+  if (budget === 25000) {
+    primary.push({
+      id: "BUDGET_15K",
+      icon: "💸",
+      iconName: "coin",
+      label: strings.suggest_budget_15k || "Set budget to 15k 💸",
+      action: "budget",
+      payload: { value: 15000 },
+    });
+    secondary.push({
+      id: "BUDGET_35K",
+      icon: "✨",
+      iconName: "star",
+      label: strings.suggest_budget_35k || "Set budget to 35k ✨",
+      action: "budget",
+      payload: { value: 35000 },
+    });
+  }
+
+  // 3. Delivery day options
+  if (intent.delivery_speed !== "fast") {
+    const target = primary.length < 3 ? primary : secondary;
+    target.push({
+      id: "DELIV_TODAY",
+      icon: "⚡",
+      iconName: "bolt",
+      label: strings.suggest_deliv_today || "Need it today? ⚡",
+      action: "delivery_date",
+      payload: { option: "same_day" },
+    });
+  }
+
+  // 4. Tone/Sentiment specific recommendations
+  if (tone === "empathetic_comfort") {
+    if (!cats.includes("tea")) {
+      const target = primary.length < 3 ? primary : secondary;
+      target.push({
+        id: "ADD_TEA_COMFORT",
+        icon: "🍵",
+        iconName: "gift",
+        label: strings.suggest_comfort_tea || "Add comfort Ceylon Tea 🍵",
+        action: "add_category",
+        payload: { category: "tea" },
+      });
+    }
+    if (!cats.includes("fruits")) {
+      const target = primary.length < 3 ? primary : secondary;
+      target.push({
+        id: "ADD_FRUIT_COMFORT",
+        icon: "🍎",
+        iconName: "gift",
+        label: strings.suggest_fruits || "Add fresh fruit basket 🍎",
+        action: "add_category",
+        payload: { category: "fruits" },
+      });
+    }
+  }
+
+  // 5. Standard giftwrap / category suggestions
   if (intent.occasion) {
     const occ = String(intent.occasion).replace(/_/g, " ");
-    suggestions.push({
+    secondary.push({
       id: "GIFT_WRAP",
       icon: "🎀",
       iconName: "gift",
@@ -107,38 +196,37 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
   }
 
   if (!cats.includes("chocolate")) {
-    suggestions.push({
+    secondary.push({
       id: "ADD_CHOCOLATES",
       icon: "🍫",
       iconName: "gift",
-      label: strings.suggestion_add_chocolates || "Add chocolates",
+      label: strings.suggestion_add_chocolates || "Add chocolates 🍫",
       action: "add_category",
       payload: { category: "chocolates" },
     });
   }
   if (!cats.includes("flowers")) {
-    suggestions.push({
+    secondary.push({
       id: "ADD_FLOWERS",
       icon: "🌹",
       iconName: "flower",
-      label: strings.suggestion_add_flowers || "Add flowers",
+      label: strings.suggestion_add_flowers || "Add flowers 🌹",
       action: "add_category",
       payload: { category: "flowers" },
     });
   }
   if (!cats.includes("cake")) {
-    suggestions.push({
+    secondary.push({
       id: "ADD_CAKE",
       icon: "🎂",
       iconName: "gift",
-      label: strings.suggestion_add_cake || "Add a cake",
+      label: strings.suggestion_add_cake || "Add a cake 🎂",
       action: "add_category",
       payload: { category: "cake" },
     });
   }
 
-  // Budget suggestions
-  suggestions.push({
+  secondary.push({
     id: "CUT_BUDGET",
     icon: "💸",
     iconName: "coin",
@@ -146,7 +234,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
     action: "budget",
     payload: { value: cheaper },
   });
-  suggestions.push({
+  secondary.push({
     id: "UPGRADE_PREMIUM",
     icon: "✨",
     iconName: "star",
@@ -155,19 +243,9 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
     payload: { value: "premium" },
   });
 
-  // Delivery
-  suggestions.push({
-    id: "SAME_DAY_DELIVERY",
-    icon: "⚡",
-    iconName: "bolt",
-    label: strings.suggestion_same_day || "Same-day delivery",
-    action: "plan",
-    payload: { value: "fast" },
-  });
-
   const currentCity = metadata?.delivery_city || "Colombo 01";
   const nextCity = currentCity.toLowerCase().includes("galle") ? "Colombo" : "Galle";
-  suggestions.push({
+  secondary.push({
     id: "CHANGE_CITY",
     icon: "🏙",
     iconName: "pin",
@@ -176,7 +254,7 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
     payload: { value: nextCity },
   });
 
-  suggestions.push({
+  secondary.push({
     id: "REBUILD_CART",
     icon: "🔁",
     iconName: "cart",
@@ -185,7 +263,12 @@ function buildChatSuggestions(metadata, strings, cartVersions, activeVersion) {
     payload: {},
   });
 
-  return suggestions.slice(0, 4);
+  // Rebalance if primary is sparse
+  while (primary.length < 3 && secondary.length > 0) {
+    primary.push(secondary.shift());
+  }
+
+  return { primary, secondary };
 }
 
 export default function RukaChat({
@@ -203,6 +286,7 @@ export default function RukaChat({
   activeVersion = "initial",
 }) {
   const [text, setText] = useState("");
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const scrollRef = useRef(null);
   const intent = metadata.intent_parsed || {};
 
@@ -228,6 +312,14 @@ export default function RukaChat({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [metadata?.budget_limit, metadata?.intent_parsed?.matched_categories, activeVersion, strings]
   );
+
+  // Partitioned suggestions based on toggle
+  const visibleSuggestions = useMemo(() => {
+    if (showAllSuggestions) {
+      return [...chatSuggestions.primary, ...chatSuggestions.secondary];
+    }
+    return chatSuggestions.primary;
+  }, [chatSuggestions, showAllSuggestions]);
 
   // Insight pills
   const pills = [];
@@ -342,12 +434,23 @@ export default function RukaChat({
       </div>
 
       {/* ── Structured suggestion cards ── */}
-      {!insightsOnly && (
-        <div className="border-t border-white/8 pt-3 space-y-1.5">
-          <p className="text-xs text-slate-600 uppercase tracking-widest font-semibold px-0.5 mb-2">
-            {strings.chat_suggested || "Suggested"}
-          </p>
-          {chatSuggestions.map((sugg) => (
+      {!insightsOnly && chatSuggestions.primary.length > 0 && (
+        <div className="border-t border-white/8 pt-3 space-y-1.5 animate-fadeIn">
+          <div className="flex items-center justify-between mb-2 px-0.5">
+            <p className="text-xs text-slate-600 uppercase tracking-widest font-semibold">
+              {strings.chat_suggested || "Suggested"}
+            </p>
+            {chatSuggestions.secondary.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAllSuggestions(!showAllSuggestions)}
+                className="text-xs text-[#fae555] hover:text-[#fae555]/85 font-medium transition-colors focus:outline-none"
+              >
+                {showAllSuggestions ? "Less options ▲" : "More options ▼"}
+              </button>
+            )}
+          </div>
+          {visibleSuggestions.map((sugg) => (
             <button
               key={sugg.id}
               type="button"
@@ -356,7 +459,7 @@ export default function RukaChat({
               className="chat-sugg-card disabled:opacity-40"
             >
               <Icon3D name={sugg.iconName} size={15} tilt className="chat-sugg-icon shrink-0 mr-1.5" />
-              <span className="flex-1 truncate">{sugg.label}</span>
+              <span className="flex-1 truncate text-left">{sugg.label}</span>
               <span className="text-slate-600 text-xs shrink-0">→</span>
             </button>
           ))}

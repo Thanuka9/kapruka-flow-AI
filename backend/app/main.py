@@ -165,6 +165,7 @@ class CheckoutRequest(BaseModel):
     email: Optional[str] = Field(
         default=None, max_length=254
     )  # Associate logged-in email
+    delivery_option: Optional[str] = Field(default="scheduled")
 
     @field_validator("delivery_date")
     @classmethod
@@ -323,6 +324,7 @@ def _get_price_from_raw(data: Dict[str, Any]) -> float:
 
 @app.post("/api/checkout")
 async def handle_checkout(req: CheckoutRequest):
+    delivery_fee = 300.0
     # 1. Idempotency Check
     existing_order = get_session_order(req.session_id, req.cart_version)
     if existing_order:
@@ -429,6 +431,17 @@ async def handle_checkout(req: CheckoutRequest):
                         status_code=400, detail="checkout_price_changed"
                     )
 
+        # Verify delivery option authoritatively
+        DELIVERY_FEES = {
+            "same-day": 600.0,
+            "same_day": 600.0,
+            "next-day": 400.0,
+            "next_day": 400.0,
+            "scheduled": 300.0,
+        }
+        opt = (req.delivery_option or "scheduled").lower().strip()
+        delivery_fee = DELIVERY_FEES.get(opt, 300.0)
+
         # Verify delivery city using kapruka_check_delivery tool
         delivery_params = {
             "params": {
@@ -452,6 +465,9 @@ async def handle_checkout(req: CheckoutRequest):
                     raise HTTPException(
                         status_code=400, detail="checkout_city_required"
                     )
+                if del_data.get("rate") is not None:
+                    # Prefer authoritative MCP rate if available
+                    delivery_fee = float(del_data["rate"])
             except HTTPException:
                 raise
             except Exception as e:
@@ -522,12 +538,12 @@ async def handle_checkout(req: CheckoutRequest):
                 summary = order_data.get("summary") or {}
                 total_val = summary.get("grand_total") or order_data.get("total")
                 if not total_val:
-                    total_val = safe_price_sum(products) + 300
+                    total_val = safe_price_sum(products) + delivery_fee
                 else:
                     try:
                         total_val = float(total_val)
                     except Exception:
-                        total_val = safe_price_sum(products) + 300
+                        total_val = safe_price_sum(products) + delivery_fee
 
                 pay_url = (
                     order_data.get("checkout_url")
@@ -559,6 +575,10 @@ async def handle_checkout(req: CheckoutRequest):
                     "order_number": order_num,
                     "payment_url": pay_url,
                     "total": total_val,
+                    "confirmed_total": total_val,
+                    "delivery_fee": delivery_fee,
+                    "delivery_option": req.delivery_option,
+                    "delivery_date": req.delivery_date,
                     "currency": order_data.get("currency", "LKR"),
                     "formatted_message": order_data.get(
                         "message", "Order created successfully!"
@@ -759,7 +779,9 @@ async def get_categories():
     # Serve a slightly stale cache before falling back to the static list.
     if _categories_cache["data"]:
         return _categories_cache["data"]
-    return _FALLBACK_CATEGORIES
+    if settings.allow_fallback_catalog:
+        return _FALLBACK_CATEGORIES
+    return {"categories": []}
 
 
 # City prefixes are tiny and stable — cache them for the process lifetime.
