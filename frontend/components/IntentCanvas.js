@@ -245,7 +245,7 @@ export default function IntentCanvas({
             </span>
           </h1>
           <p className="hero-subtitle text-sm md:text-base mt-3 max-w-lg mx-auto">
-            {s.intent_desc || "Describe your shopping goal in any language. Ruka composes the perfect cart — instantly."}
+            {s.intent_desc || "Describe your shopping goal in English, Sinhala, or Tanglish."}
           </p>
         </div>
 
@@ -268,7 +268,7 @@ export default function IntentCanvas({
                 className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-[11px] sm:text-xs font-semibold text-slate-300"
               >
                 <span aria-hidden>{step.icon}</span>
-                <span>{i + 1}. {step.label}</span>
+                <span>{`${i + 1}. ${step.label}`}</span>
               </li>
             ))}
           </ol>
@@ -442,6 +442,20 @@ export default function IntentCanvas({
             </div>
           )}
         </div>
+
+        <noscript>
+          <section className="mt-4 p-4 rounded-xl border border-white/10 bg-white/5">
+            <h2 className="text-sm font-bold text-white mb-2">{s.trending_on_kapruka || "Trending on Kapruka"}</h2>
+            <p className="text-xs text-slate-400 mb-3">{s.commerce_flow_title || "How Kapruka Flow works"}</p>
+            <ul className="space-y-2 text-sm text-slate-300">
+              {displayProducts.slice(0, 6).map((product) => (
+                <li key={product.id}>
+                  {product.name} — {s.add_to_crate || "Add to cart"}
+                </li>
+              ))}
+            </ul>
+          </section>
+        </noscript>
 
         {/* Personalised picks (if any orders) */}
         {pickedForYou.length > 0 && (

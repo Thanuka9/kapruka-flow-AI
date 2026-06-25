@@ -11,13 +11,13 @@ export default function App({ Component, pageProps }) {
         <meta name="theme-color" content="#c70101" />
         <meta
           name="description"
-          content="Kapruka Flow — AI-first shopping for Sri Lanka. Describe what you need in English, Sinhala, or Tanglish and get a complete cart from the live Kapruka catalog."
+          content="Tell me what you need. I'll build the cart. Search Kapruka products, add to cart, set delivery and gift message, then checkout."
         />
         <meta name="application-name" content="Kapruka Flow" />
         <meta property="og:title" content="Kapruka Flow — AI Shopping Experience" />
         <meta
           property="og:description"
-          content="Tell us what you want. We build the shopping plan — powered by the live Kapruka MCP catalog."
+          content="Tell me what you need. I'll build the cart — powered by the live Kapruka MCP catalog."
         />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />

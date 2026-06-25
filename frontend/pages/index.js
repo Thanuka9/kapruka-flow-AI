@@ -22,7 +22,7 @@ import { SHOWCASE_PRODUCTS, fetchTrendingProductsFromBackend } from "../constant
 
 const INTENT_TIMEOUT_MS = 120000;
 
-export default function Home({ initialTrendingProducts = [] }) {
+export default function Home({ initialTrendingProducts = [], buildSha = "dev" }) {
   const [pageState, setPageState] = useState("input"); // "input" | "workspace" | "cart"
   const [sessionId, setSessionId] = useState(null);
   const [cartVersions, setCartVersions] = useState({});
@@ -126,11 +126,16 @@ export default function Home({ initialTrendingProducts = [] }) {
       .catch(() => setMcpStatus("unavailable"));
 
     loadCategories();
-    loadTrendingProducts();
+    if (initialTrendingProducts.length === 0) {
+      loadTrendingProducts();
+    } else {
+      loadTrendingProducts({ silent: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function loadTrendingProducts() {
-    setTrendingLoading(true);
+  async function loadTrendingProducts({ silent = false } = {}) {
+    if (!silent) setTrendingLoading(true);
     const queries = ["gift hamper", "chocolates", "flowers", "cakes"];
     try {
       const results = await Promise.all(
@@ -152,7 +157,7 @@ export default function Home({ initialTrendingProducts = [] }) {
       }
       setTrendingProducts(merged.length > 0 ? merged.slice(0, 6) : SHOWCASE_PRODUCTS);
     } finally {
-      setTrendingLoading(false);
+      if (!silent) setTrendingLoading(false);
     }
   }
 
@@ -1100,7 +1105,8 @@ export default function Home({ initialTrendingProducts = [] }) {
       <div className="app-bg" aria-hidden="true" />
       <Head>
         <title>Kapruka Flow — AI Shopping Experience</title>
-        <meta name="description" content="State-of-the-art AI-first shopping assistant for Kapruka e-commerce catalog." />
+        <meta name="description" content="Tell me what you need. I'll build the cart. Search Kapruka products, add to cart, set delivery and gift message, then checkout." />
+        <meta name="kapruka-build" content={buildSha} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="https://www.kapruka.com/favicon.ico" />
       </Head>
@@ -1309,7 +1315,12 @@ export default function Home({ initialTrendingProducts = [] }) {
   );
 }
 
-export async function getServerSideProps() {
+export async function getServerSideProps({ res }) {
+  if (res) {
+    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    res.setHeader("X-Kapruka-Build", process.env.VERCEL_GIT_COMMIT_SHA || "local");
+  }
+
   const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
   let initialTrendingProducts = [];
   try {
@@ -1323,6 +1334,7 @@ export async function getServerSideProps() {
   return {
     props: {
       initialTrendingProducts,
+      buildSha: process.env.VERCEL_GIT_COMMIT_SHA || "local",
     },
   };
 }

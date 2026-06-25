@@ -269,34 +269,19 @@ export default function KaprukaHeader({
                 </button>
               </>
             ) : (
-              <>
-                {/* Mobile login button */}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-[10px] sm:text-[11px] text-slate-400 font-semibold whitespace-nowrap">
+                  {s.hello_guest || "Hello, Guest"}
+                </span>
                 <button
                   type="button"
                   onClick={onLoginClick}
-                  className="sm:hidden flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/8 text-slate-300 hover:bg-white/10 hover:text-white transition-all shrink-0"
-                  aria-label={s.login || "Login"}
+                  className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] sm:text-xs font-bold text-slate-100 hover:bg-[#D80000] hover:border-[#D80000] transition-colors whitespace-nowrap"
+                  aria-label={`${s.hello_guest || "Hello, Guest"} — ${s.sign_in || s.login || "Sign In"}`}
                 >
-                  <Icon3D name="user" size={18} tilt />
+                  {s.sign_in || s.login || "Sign In"}
                 </button>
-                <button
-                  type="button"
-                  onClick={onLoginClick}
-                  className="hidden sm:flex items-center gap-3 px-1 py-1 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
-                >
-                  <span className="flex flex-col items-end leading-tight">
-                    <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">
-                      {s.hello_guest || "Hello, Guest"}
-                    </span>
-                  </span>
-                  <span
-                    className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-slate-100 hover:bg-[#D80000] hover:border-[#D80000] transition-colors"
-                    aria-label={s.sign_in || s.login || "Sign In"}
-                  >
-                    {s.sign_in || s.login || "Sign In"}
-                  </span>
-                </button>
-              </>
+              </div>
             )}
 
             <button
@@ -316,8 +301,8 @@ export default function KaprukaHeader({
                   </span>
                 )}
               </div>
-              <div className="hidden sm:flex flex-col items-start text-left min-w-0">
-                <span className="text-xs font-bold text-slate-200 leading-tight truncate max-w-[140px]">
+              <div className="flex flex-col items-start text-left min-w-0 max-w-[120px] sm:max-w-[160px]">
+                <span className="text-[10px] sm:text-xs font-bold text-slate-200 leading-tight truncate w-full">
                   {cartCount > 0
                     ? (s.cart_count_label || `Cart · ${cartCount} items`).replace("{count}", String(cartCount))
                     : (s.cart_empty_label || "Your cart is empty")}
