@@ -249,43 +249,48 @@ async def handle_intent(req: IntentRequest):
 
         versions = result.get("cart_versions", {})
         metadata = result.get("metadata", {})
-        if metadata.get("mcp_product_count", 0) == 0:
-            raise HTTPException(
-                status_code=503,
-                detail="Kapruka MCP returned no products. Try a broader shopping intent.",
-            )
-        if not versions.get("initial"):
-            raise HTTPException(
-                status_code=503,
-                detail="Could not build a shopping plan from Kapruka catalog.",
-            )
+
+        is_tracking = "order_tracking" in metadata
+
+        if not is_tracking:
+            if metadata.get("mcp_product_count", 0) == 0:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Kapruka MCP returned no products. Try a broader shopping intent.",
+                )
+            if not versions.get("initial"):
+                raise HTTPException(
+                    status_code=503,
+                    detail="Could not build a shopping plan from Kapruka catalog.",
+                )
 
         # Save results to database
         story = result.get("story", [])
         save_cart_versions(session_id, versions, story)
 
-        # Save user preferences with evolution
-        metadata = result.get("metadata", {})
-        intent_parsed = metadata.get("intent_parsed", {})
-        save_user_preferences(
-            session_id,
-            budget=intent_parsed.get("budget", 25000.0),
-            language=intent_parsed.get("language", "en"),
-            city=metadata.get("delivery_city", "Colombo 01"),
-            delivery_speed=intent_parsed.get("delivery_speed", "standard"),
-            evolution=json.dumps(req.evolution) if req.evolution else None,
-        )
+        if not is_tracking:
+            # Save user preferences with evolution
+            metadata = result.get("metadata", {})
+            intent_parsed = metadata.get("intent_parsed", {})
+            save_user_preferences(
+                session_id,
+                budget=intent_parsed.get("budget", 25000.0),
+                language=intent_parsed.get("language", "en"),
+                city=metadata.get("delivery_city", "Colombo 01"),
+                delivery_speed=intent_parsed.get("delivery_speed", "standard"),
+                evolution=json.dumps(req.evolution) if req.evolution else None,
+            )
 
-        # Pre-fill delivery state with city
-        save_delivery_state(
-            session_id,
-            city=metadata.get("delivery_city", "Colombo 01"),
-            address="",
-            recipient_name="",
-            recipient_phone="",
-            sender_name="",
-            gift_message=intent_parsed.get("gift_message", ""),
-        )
+            # Pre-fill delivery state with city
+            save_delivery_state(
+                session_id,
+                city=metadata.get("delivery_city", "Colombo 01"),
+                address="",
+                recipient_name="",
+                recipient_phone="",
+                sender_name="",
+                gift_message=intent_parsed.get("gift_message", ""),
+            )
 
         # Save agent response (story) to DB message log
         save_message(session_id, "assistant", " | ".join(story))

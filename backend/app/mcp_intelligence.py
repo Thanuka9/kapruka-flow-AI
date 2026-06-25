@@ -774,11 +774,38 @@ def parse_intent_mcp(
         recipient,
     )
 
+    # Order tracking detection
+    order_number_match = re.search(
+        r"\b(V[A-Z]{3}\d{4,20}[A-Z0-9]*|FLOW-SIM-[A-Z0-9\-]+|FLOW-REF-[A-Z0-9\-]+|TEMP-[A-Z0-9\-]+|ORD-\d+)\b",
+        text,
+        re.IGNORECASE,
+    )
+
+    is_tracking_query = False
+    tracking_keywords = [
+        "track",
+        "status",
+        "where is my order",
+        "order status",
+        "delivery status",
+        "koheda mage order eka",
+        "order eka ko",
+        "order eka track",
+        "tracking",
+        "order ko",
+    ]
+    if any(kw in text.lower() for kw in tracking_keywords) or order_number_match:
+        is_tracking_query = True
+
     budget_inferred = budget is None
     effective_budget = budget if budget is not None else 25000.0
     tone = _detect_sentiment_tone(text)
 
     return {
+        "intent_type": "tracking" if is_tracking_query else "shopping",
+        "order_number": order_number_match.group(1).upper()
+        if order_number_match
+        else None,
         "search_queries": queries,
         "keywords": keywords,
         "matched_categories": matched_categories,

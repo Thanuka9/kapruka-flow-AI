@@ -699,6 +699,152 @@ async def execute_agent_pipeline(
         print("Budget overridden from slider:", override_budget)
     print("Intent extracted:", intent)
 
+    if intent.get("intent_type") == "tracking":
+        order_number = intent.get("order_number")
+        print(f"Tracking intent detected for order: {order_number}")
+
+        lang = intent.get("language", "en")
+
+        if not order_number:
+            if lang == "si":
+                story_msg = "ඔබගේ ඇණවුම ලුහුබැඳීමට (track කිරීමට) කරුණාකර ඇණවුම් අංකය (order number) ලබා දෙන්න."
+            elif lang == "tanglish":
+                story_msg = (
+                    "Oyage order eka track karanna puluwan order number eka laba denna."
+                )
+            else:
+                story_msg = "Please provide your order number (e.g. VPAY827982BA) so I can locate and track your delivery."
+
+            emit_event(
+                pipeline_events,
+                "tracking",
+                "Order tracking initiated, awaiting order number",
+                "kapruka_track_order",
+            )
+
+            return {
+                "cart_versions": {},
+                "story": [story_msg],
+                "metadata": {
+                    "intent_parsed": intent,
+                    "order_tracking": {
+                        "error": "missing_order_number",
+                        "prompt": story_msg,
+                    },
+                    "mcp_tools_used": [],
+                },
+                "pipeline_events": pipeline_events,
+            }
+
+        emit_event(
+            pipeline_events,
+            "tracking",
+            f"Querying order status for {order_number} from Kapruka MCP...",
+            "kapruka_track_order",
+        )
+
+        tracking_json_raw = None
+        try:
+            async with mcp_session() as session:
+                tracking_json_raw = await call_tool(
+                    session,
+                    "kapruka_track_order",
+                    arguments={
+                        "params": {
+                            "order_number": order_number,
+                            "response_format": "json",
+                        }
+                    },
+                )
+        except Exception as exc:
+            print(f"MCP tracking session error: {exc}")
+
+        tracking_data = None
+        if tracking_json_raw:
+            try:
+                tracking_data = json.loads(tracking_json_raw)
+            except Exception as e:
+                print(f"Failed to parse tracking JSON: {e}")
+
+        if (
+            not tracking_data
+            or "error" in tracking_data
+            or tracking_data.get("status") == "not_found"
+        ):
+            if lang == "si":
+                story_msg = f"සමාවන්න, {order_number} අංකය සහිත ඇණවුම සොයා ගැනීමට නොහැකි විය. කරුණාකර ඇණවුම් අංකය නිවැරදි දැයි නැවත පරීක්ෂා කරන්න."
+            elif lang == "tanglish":
+                story_msg = f"Sorry, {order_number} order eka hoyaganna bari una. Karunakara order number eka check karanna."
+            else:
+                story_msg = f"I couldn't find any order matching {order_number}. Please verify the order number and try again."
+
+            emit_event(
+                pipeline_events,
+                "tracking",
+                f"Order {order_number} not found on Kapruka MCP",
+                "kapruka_track_order",
+            )
+
+            return {
+                "cart_versions": {},
+                "story": [story_msg],
+                "metadata": {
+                    "intent_parsed": intent,
+                    "order_tracking": {
+                        "error": "order_not_found",
+                        "order_number": order_number,
+                        "prompt": story_msg,
+                    },
+                    "mcp_tools_used": [{"name": "kapruka_track_order", "count": 1}],
+                },
+                "pipeline_events": pipeline_events,
+            }
+
+        status_disp = tracking_data.get("status_display") or tracking_data.get(
+            "status", ""
+        )
+        recipient_name = tracking_data.get("recipient", {}).get("name", "recipient")
+
+        if lang == "si":
+            if "deliver" in status_disp.lower():
+                story_msg = f"ඔබගේ {order_number} ඇණවුම සාර්ථකව {recipient_name} වෙත බෙදා හැර (deliver කර) ඇත."
+            elif "out" in status_disp.lower():
+                story_msg = f"ඔබගේ {order_number} ඇණවුම {recipient_name} වෙත බෙදා හැරීම සඳහා පිටත්ව ගොස් ඇත (out for delivery)."
+            else:
+                story_msg = f"ඔබගේ {order_number} ඇණවුමේ වත්මන් තත්ත්වය: {status_disp}."
+        elif lang == "tanglish":
+            if "deliver" in status_disp.lower():
+                story_msg = f"Oyage {order_number} order eka successfully {recipient_name} ta deliver karala thiyenne."
+            elif "out" in status_disp.lower():
+                story_msg = f"Oyage {order_number} order eka {recipient_name} ta deliver karanna out wela thiyenne."
+            else:
+                story_msg = f"Oyage {order_number} order status eka: {status_disp}."
+        else:
+            if "deliver" in status_disp.lower():
+                story_msg = f"Great news! Your order {order_number} has been successfully delivered to {recipient_name}."
+            elif "out" in status_disp.lower():
+                story_msg = f"Your order {order_number} is out for delivery to {recipient_name}."
+            else:
+                story_msg = f"Your order {order_number} is currently: {status_disp}."
+
+        emit_event(
+            pipeline_events,
+            "tracking",
+            f"Successfully retrieved tracking details for {order_number}. Status: {status_disp}",
+            "kapruka_track_order",
+        )
+
+        return {
+            "cart_versions": {},
+            "story": [story_msg],
+            "metadata": {
+                "intent_parsed": intent,
+                "order_tracking": tracking_data,
+                "mcp_tools_used": [{"name": "kapruka_track_order", "count": 1}],
+            },
+            "pipeline_events": pipeline_events,
+        }
+
     budget_val = intent.get("budget", 25000.0)
     understood_bits = [
         f"budget LKR {budget_val:,.0f}",

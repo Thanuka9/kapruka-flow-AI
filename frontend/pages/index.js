@@ -9,6 +9,8 @@ import KaprukaHeader from "../components/KaprukaHeader";
 import { LoginModal, ProfileModal } from "../components/AuthModals";
 import { LOCALIZED_STRINGS } from "../components/localization";
 import FlowError from "../components/FlowError";
+import RukaChat from "../components/RukaChat";
+import OrderTrackingPanel from "../components/OrderTrackingPanel";
 import { instantRebudget, gatherCatalogFromVersions } from "../utils/rebudget";
 import { interpretRefineMessage, buildAgentReplyBubbles } from "../utils/refine";
 import { isDemoPrompt } from "../constants/demo";
@@ -24,6 +26,7 @@ const INTENT_TIMEOUT_MS = 120000;
 
 export default function Home({ initialTrendingProducts = [], buildSha = "dev" }) {
   const [pageState, setPageState] = useState("input"); // "input" | "workspace" | "cart"
+  const [orderTracking, setOrderTracking] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [cartVersions, setCartVersions] = useState({});
   const [activeVersion, setActiveVersion] = useState("initial");
@@ -224,6 +227,7 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
     setCartVersions(data.cart_versions || {});
     setStory(data.story || []);
     setMetadata(data.metadata || {});
+    setOrderTracking(data.metadata?.order_tracking || null);
     if (data.metadata?.intent_parsed?.gift_message) {
       setGiftMessageDraft(data.metadata.intent_parsed.gift_message);
     }
@@ -352,6 +356,7 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
   async function handleStartBuild(promptText, language, overrideBudget = null, catHint = null) {
     setPageState("workspace");
     setPendingData(null);
+    setOrderTracking(null);
     setAnimationDone(false);
     setApiComplete(false);
     setPipelineEvents([]);
@@ -459,7 +464,8 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
         (sum, items) => sum + (Array.isArray(items) ? items.length : 0),
         0
       );
-      if (totalItems === 0) {
+      const isTracking = !!pendingData.metadata?.order_tracking;
+      if (totalItems === 0 && !isTracking) {
         const errStrings = LOCALIZED_STRINGS[currentLanguage] || LOCALIZED_STRINGS["en-US"];
         setFlowError(errStrings.no_products || errStrings.pipeline_error);
         setFlowErrorType("no_products");
@@ -473,6 +479,7 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
       setCartVersions(currentVersions);
       setStory(pendingData.story);
       setMetadata(pendingData.metadata);
+      setOrderTracking(pendingData.metadata?.order_tracking || null);
       setCatalogCache(pendingData.metadata?.catalog_products || catalogCache);
       if (pendingData.metadata?.intent_parsed?.gift_message) {
         setGiftMessageDraft(pendingData.metadata.intent_parsed.gift_message);
@@ -602,6 +609,20 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
       setChatMessages((prev) => [...prev, { role: "agent", text: msg, kind }]);
     const fmt = (tpl, vars) =>
       Object.entries(vars || {}).reduce((acc, [k, v]) => acc.split(`{${k}}`).join(v), tpl || "");
+
+    // Intercept order tracking queries
+    const orderPattern = /\b(V[A-Z]{3}\d{4,20}[A-Z0-9]*|FLOW-SIM-[A-Z0-9\-]+|FLOW-REF-[A-Z0-9\-]+|TEMP-[A-Z0-9\-]+|ORD-\d+)\b/i;
+    const trackingKeywords = ["track", "status", "where is my order", "order status", "delivery status", "koheda mage order eka", "order eka ko", "order eka track", "tracking", "order ko"];
+    const isTrackingQuery = orderPattern.test(text) || trackingKeywords.some(kw => text.toLowerCase().includes(kw));
+
+    if (isTrackingQuery) {
+      setChatMessages((prev) => [...prev, { role: "user", text }]);
+      setChatBusy(true);
+      pushAgent(s.order_tracking_searching || "Retrieving order tracking status...");
+      setChatBusy(false);
+      handleStartBuild(text, currentLanguage);
+      return;
+    }
 
     setChatMessages((prev) => [...prev, { role: "user", text }]);
     setChatBusy(true);
@@ -994,6 +1015,7 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
     setStory([]);
     setMetadata({});
     setChatMessages([]);
+    setOrderTracking(null);
     setPageState("input");
     setLastPrompt("");
     setCurrentLanguage("en-US");
@@ -1172,7 +1194,50 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
           />
         )}
 
-        {pageState === "cart" && Object.keys(cartVersions).length === 0 ? (
+        {pageState === "cart" && orderTracking ? (
+          <div className="w-full max-w-7xl mx-auto px-4 py-8 animate-fadeIn flex flex-col lg:flex-row gap-8">
+            {/* Left side: Ruka Chat so they can converse and ask follow-ups */}
+            <div className="w-full lg:w-[400px] shrink-0">
+              <div className="bg-slate-900/25 border border-white/5 rounded-3xl p-4 backdrop-blur-sm shadow-2xl">
+                <RukaChat
+                  messages={chatMessages}
+                  busy={chatBusy}
+                  onSend={handleRefine}
+                  onSuggestionAction={handleSuggestionAction}
+                  strings={strings}
+                  metadata={metadata}
+                  prompt={lastPrompt}
+                  language={currentLanguage}
+                />
+              </div>
+            </div>
+            {/* Right side: Premium Order Tracking timeline dashboard */}
+            <div className="flex-1 min-w-0">
+              <div className="bg-slate-900/25 border border-white/5 rounded-3xl p-6 backdrop-blur-sm shadow-2xl relative overflow-hidden">
+                {/* Visual decoration */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-kapruka-gold/5 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-red-500/5 rounded-full blur-[100px] pointer-events-none" />
+                
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
+                  <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                    <span>📦</span> {strings.order_tracking_title || "Order Tracking"}
+                  </h1>
+                  <button
+                    onClick={handleReset}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  >
+                    Back to Shopping
+                  </button>
+                </div>
+                <OrderTrackingPanel
+                  trackingData={orderTracking}
+                  language={currentLanguage}
+                  strings={strings}
+                />
+              </div>
+            </div>
+          </div>
+        ) : pageState === "cart" && Object.keys(cartVersions).length === 0 ? (
           <div className="w-full flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8 animate-fadeIn">
             <div className="w-24 h-24 rounded-full bg-flow-bg-secondary border border-flow-border flex items-center justify-center text-5xl shadow-card">
               🛒
