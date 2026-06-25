@@ -96,11 +96,22 @@ const DNA_CHIP_CLASS = {
   sentiment: "dna-chip dna-chip-sentiment",
 };
 
+const AGE_RESTRICTED_TERMS = [
+  "liquor", "wine", "whisky", "whiskey", "spirits", "tobacco", "beer", "champagne", "vodka",
+];
+
+function isAgeRestricted(product) {
+  const cat = (product?.category || "").toLowerCase();
+  const name = (product?.name || "").toLowerCase();
+  return AGE_RESTRICTED_TERMS.some((t) => cat.includes(t) || name.includes(t));
+}
+
 export default function ProductCard({
   product,
   onRemove,
   onAdd,
   onReplace,
+  onQuantityChange,
   isInCart = true,
   candidates = [],
   strings,
@@ -120,6 +131,7 @@ export default function ProductCard({
     no_items_found: "No items found",
     general_category: "General",
     out_of_stock: "Out of stock",
+    age_restricted: "Age-restricted item",
   };
 
   const [isSaved, setIsSaved] = useState(() =>
@@ -252,6 +264,11 @@ export default function ProductCard({
               {activeStrings.out_of_stock}
             </span>
           )}
+          {isAgeRestricted(product) && (
+            <span className="absolute top-2 right-2 px-2 py-1 rounded-pill text-xs font-semibold bg-purple-950/50 border border-purple-800/40 text-purple-200">
+              🔞 {activeStrings.age_restricted || "Age-restricted"}
+            </span>
+          )}
         </div>
 
         <span className="text-label flex items-center gap-2 mb-2 text-slate-400">
@@ -271,7 +288,30 @@ export default function ProductCard({
 
         <div className="flex items-center gap-3 mb-3">
           <p className="text-price text-kapruka-red">{formattedPrice}</p>
-          {isInCart && product.quantity && (
+          {isInCart && onQuantityChange && (
+            <div className="flex items-center gap-1 rounded-lg border border-flow-border bg-flow-bg-secondary">
+              <button
+                type="button"
+                onClick={() => onQuantityChange(-1)}
+                className="w-8 h-8 text-sm font-bold text-flow-secondary hover:text-flow-text"
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
+              <span className="text-sm font-semibold min-w-[1.5rem] text-center">
+                {product.quantity ?? 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => onQuantityChange(1)}
+                className="w-8 h-8 text-sm font-bold text-flow-secondary hover:text-flow-text"
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+            </div>
+          )}
+          {isInCart && product.quantity && !onQuantityChange && (
             <span className="text-label bg-flow-bg-secondary px-3 py-1 rounded-pill">
               {activeStrings.qty}: {product.quantity}
             </span>
@@ -376,11 +416,11 @@ export default function ProductCard({
               )}
             </div>
           </>
-        ) : (
+        ) : onAdd ? (
           <button type="button" onClick={onAdd} className="w-full btn-primary min-h-[56px]">
             {activeStrings.add_to_crate}
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   );

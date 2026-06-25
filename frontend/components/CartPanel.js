@@ -34,6 +34,8 @@ export default function CartPanel({
   clientProfile = null,
   language = "en-US",
   onCompareClick,
+  giftMessage = "",
+  onGiftMessageChange,
 }) {
   const demoCompact = false;
   const items = cartVersions[activeVersion] ?? [];
@@ -86,6 +88,12 @@ export default function CartPanel({
 
   const [fetchedAlternatives, setFetchedAlternatives] = useState([]);
   const [altLoading, setAltLoading] = useState(false);
+  const [showDeliveryEdit, setShowDeliveryEdit] = useState(false);
+  const [editCity, setEditCity] = useState(deliveryCity);
+  const [editDate, setEditDate] = useState("");
+  const [showGiftEdit, setShowGiftEdit] = useState(false);
+  const giftDraft = giftMessage;
+  const setGiftDraft = onGiftMessageChange || (() => {});
 
   // Slider budget state
   const [sliderBudget, setSliderBudget] = useState(budgetLimit);
@@ -97,6 +105,10 @@ export default function CartPanel({
   useEffect(() => {
     setSliderBudget(budgetLimit);
   }, [budgetLimit]);
+
+  useEffect(() => {
+    setEditCity(deliveryCity);
+  }, [deliveryCity]);
 
   useEffect(() => {
     const prevItems = previousItemsRef.current;
@@ -384,6 +396,26 @@ export default function CartPanel({
     onUpdateCartItems(activeVersion, updated);
   };
 
+  const handleClearCart = () => {
+    onUpdateCartItems(activeVersion, []);
+  };
+
+  const handleQuantityChange = (itemId, delta) => {
+    const updated = items.map((it) => {
+      if (String(it.id) !== String(itemId)) return it;
+      const nextQty = Math.max(1, Math.min(20, (it.quantity ?? 1) + delta));
+      return { ...it, quantity: nextQty };
+    });
+    onUpdateCartItems(activeVersion, updated);
+  };
+
+  const applyDeliveryEdit = () => {
+    if (onChatSend && editCity.trim()) {
+      onChatSend(`deliver to ${editCity.trim()}`);
+    }
+    setShowDeliveryEdit(false);
+  };
+
   const formatTotal = formatCurrency(total);
   const outOfStockItems = items.filter((item) => item.in_stock === false);
 
@@ -406,16 +438,27 @@ export default function CartPanel({
 
         <div className="flex justify-between items-center gap-2">
           <p className="text-xs text-flow-secondary uppercase tracking-widest font-semibold">
-            {activeStrings.cart_variations || "Crate Variations"}
+            {activeStrings.cart_variations || "Plan variations"}
           </p>
-          <button
-            type="button"
-            onClick={onCompareClick}
-            className="text-xs font-bold text-kapruka-gold hover:text-kapruka-gold/80 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/8 hover:bg-white/8"
-          >
-            <Icon3D name="sparkle" size={14} tilt />
-            {activeStrings.compare_versions || "Compare Versions"}
-          </button>
+          <div className="flex items-center gap-2">
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearCart}
+                className="text-xs font-semibold text-red-500 hover:text-red-400 px-2 py-1 rounded-lg hover:bg-red-50"
+              >
+                {activeStrings.clear_cart || "Clear cart"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onCompareClick}
+              className="text-xs font-bold text-kapruka-gold hover:text-kapruka-gold/80 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/8 hover:bg-white/8"
+            >
+              <Icon3D name="sparkle" size={14} tilt />
+              {activeStrings.compare_versions || "Compare Versions"}
+            </button>
+          </div>
         </div>
 
         {/* Tab Switcher for Cart Versions */}
@@ -482,6 +525,7 @@ export default function CartPanel({
                     isInCart={true}
                     onRemove={() => handleRemoveItem(item.id)}
                     onReplace={(newProduct) => handleReplaceItem(item.id, newProduct)}
+                    onQuantityChange={(delta) => handleQuantityChange(item.id, delta)}
                     strings={activeStrings}
                     compact={demoCompact}
                     cardIndex={idx}
@@ -716,9 +760,10 @@ export default function CartPanel({
 
         {/* Budget Meter */}
         {outOfStockItems.length > 0 && (
-          <div className="flow-card p-4 bg-amber-50 border-amber-200 space-y-2">
-            <p className="text-sm font-semibold text-amber-900">
-              ⚠ {outOfStockItems.length} {activeStrings.out_of_stock || "Out of stock"}
+          <div className="flow-card p-4 bg-red-50 border-2 border-red-300 space-y-2 shadow-sm">
+            <p className="text-sm font-bold text-red-900 flex items-center gap-2">
+              <span className="text-lg">⛔</span>
+              {outOfStockItems.length} {activeStrings.out_of_stock || "Out of stock"}
             </p>
             <p className="text-sm text-amber-800 leading-relaxed">
               {activeStrings.out_of_stock_cart_hint}
@@ -814,11 +859,88 @@ export default function CartPanel({
             </div>
           )}
 
+          {/* Delivery + gift preview before checkout */}
+          {items.length > 0 && (
+            <div className="rounded-2xl border border-flow-border bg-flow-bg-secondary/60 p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-flow-muted">
+                    {activeStrings.personalization_delivery}
+                  </p>
+                  <p className="text-sm font-semibold text-flow-text mt-1">
+                    📍 {editCity || deliveryCity}
+                    {editDate ? ` · ${editDate}` : ""}
+                  </p>
+                  <p className="text-sm text-flow-muted mt-1">
+                    {(activeStrings.delivery_to_fee || "Delivery to {city}: LKR {fee}")
+                      .replace("{city}", editCity || deliveryCity)
+                      .replace("{fee}", String(deliveryFee))}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDeliveryEdit((v) => !v)}
+                  className="text-xs font-bold text-kapruka-red hover:underline shrink-0"
+                >
+                  {activeStrings.edit_delivery || "Edit delivery"}
+                </button>
+              </div>
+              {showDeliveryEdit && (
+                <div className="space-y-2 pt-2 border-t border-flow-border animate-fadeIn">
+                  <input
+                    type="text"
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
+                    className="flow-input w-full text-sm"
+                    placeholder={activeStrings.delivery_city || "Delivery city"}
+                  />
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="flow-input w-full text-sm"
+                  />
+                  <button type="button" onClick={applyDeliveryEdit} className="btn-secondary w-full min-h-[40px] text-sm">
+                    {activeStrings.optimize || "Apply"}
+                  </button>
+                </div>
+              )}
+              <div className="pt-2 border-t border-flow-border">
+                {!showGiftEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowGiftEdit(true)}
+                    className="text-sm text-flow-secondary hover:text-flow-text text-left"
+                  >
+                    ✉️ {giftDraft ? giftDraft.slice(0, 80) : (activeStrings.add_gift_message || "Add a gift message")}
+                  </button>
+                ) : (
+                  <textarea
+                    rows={2}
+                    value={giftDraft}
+                    onChange={(e) => onGiftMessageChange?.(e.target.value)}
+                    className="flow-input w-full text-sm"
+                    placeholder={activeStrings.gift_card_msg_opt || "Gift message"}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl bg-kapruka-red/5 border border-kapruka-red/15 p-3 text-center">
+            <p className="text-[10px] uppercase tracking-widest font-bold text-kapruka-red mb-1">
+              {activeStrings.checkout_steps_label || "Checkout steps"}
+            </p>
+            <p className="text-xs text-flow-secondary leading-relaxed">
+              {activeStrings.checkout_steps_preview || "Sender → Recipient → Delivery & Gift → Review → Pay"}
+            </p>
+          </div>
+
           <button
             type="button"
             onClick={onCheckout}
             disabled={items.length === 0 || outOfStockItems.length > 0}
-            className="btn-primary btn-primary-lg w-full checkout-pulse-once disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary btn-primary-lg w-full checkout-cta-glow disabled:opacity-50 disabled:cursor-not-allowed text-base py-4"
           >
             {activeStrings.proceed_to_checkout}
           </button>
@@ -923,6 +1045,19 @@ export default function CartPanel({
         )}
 
       </div>
+
+      {items.length > 0 && !demoCompact && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-[#0f172a]/95 backdrop-blur-md border-t border-white/10 shadow-2xl xl:hidden">
+          <button
+            type="button"
+            onClick={onCheckout}
+            disabled={outOfStockItems.length > 0}
+            className="btn-primary w-full min-h-[52px] checkout-cta-glow disabled:opacity-50"
+          >
+            {activeStrings.floating_checkout || "Checkout now"} · {formatTotal}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

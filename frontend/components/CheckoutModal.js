@@ -428,11 +428,18 @@ export default function CheckoutModal({
         setCheckoutError(activeStrings.checkout_failed_sub || "Checkout failed");
       } else {
         const detail = String(data.detail || data.error || "");
-        const localizedMsg = activeStrings[detail] || (
-          /stock|out of stock|unavailable|not available/i.test(detail)
+        const localizedMsg =
+          activeStrings[detail]
+          || (detail === "checkout_price_changed" ? activeStrings.checkout_price_changed : null)
+          || (detail === "checkout_item_unavailable" ? activeStrings.checkout_item_unavailable : null)
+          || (detail === "checkout_duplicate_prevented" ? activeStrings.checkout_duplicate_prevented : null)
+          || (detail === "checkout_city_required" ? activeStrings.checkout_city_required : null)
+          || (/stock|out of stock|unavailable|not available/i.test(detail)
             ? (activeStrings.checkout_item_unavailable || activeStrings.checkout_stock_error)
-            : detail
-        ) || activeStrings.checkout_failed_sub || "Checkout failed";
+            : null)
+          || detail
+          || activeStrings.checkout_failed_sub
+          || "Checkout failed";
         setCheckoutError(localizedMsg);
       }
     } catch (err) {
@@ -507,6 +514,22 @@ export default function CheckoutModal({
               <div className="shrink-0 px-6 pt-6 pb-4 border-b border-white/10">
                 <h2 className="text-2xl font-bold text-white tracking-tight">{activeStrings.review_checkout}</h2>
                 <p className="text-base text-slate-400 mt-1">{activeStrings.checkout_sub}</p>
+                <div className="mt-4 flex flex-wrap gap-1.5" aria-label={activeStrings.checkout_steps_label || "Checkout steps"}>
+                  {[
+                    activeStrings.checkout_step_sender || "1. Sender",
+                    activeStrings.checkout_step_recipient || "2. Recipient",
+                    activeStrings.checkout_step_delivery || "3. Delivery & Gift",
+                    activeStrings.checkout_step_review || "4. Review",
+                    activeStrings.checkout_step_pay || "5. Pay",
+                  ].map((label, i) => (
+                    <span
+                      key={label}
+                      className="text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
               </div>
 
               <form id="kapruka-checkout-form" onSubmit={handleSubmit} noValidate className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
@@ -788,8 +811,9 @@ export default function CheckoutModal({
               {/* Pinned footer */}
               <div className="shrink-0 px-6 py-4 border-t border-white/10 bg-[var(--color-surface)] flex flex-col sm:flex-row items-center sm:justify-between gap-3">
                 <div className="text-center sm:text-left w-full sm:w-auto">
-                  <span className="text-sm text-slate-400 uppercase tracking-wider">{activeStrings.total_with_delivery}</span>
+                  <span className="text-sm text-slate-400 uppercase tracking-wider block font-semibold">{activeStrings.estimated_total}</span>
                   <p className="text-2xl font-bold text-kapruka-red font-mono">{formattedTotal}</p>
+                  <span className="text-[11px] text-slate-400 block mt-1">{activeStrings.estimated_total_note}</span>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
                   <button type="button" onClick={onClose} className="flex-1 sm:flex-initial btn-secondary-premium px-4 py-3 text-sm font-semibold text-center">
@@ -915,10 +939,22 @@ export default function CheckoutModal({
                   })}
                 </div>
                 <div className="border-t border-dashed border-white/20 pt-2 space-y-1.5 text-sm">
+                  <div className="flex justify-between text-slate-400 text-sm">
+                    <span>{activeStrings.subtotal}</span>
+                    <span className="font-mono text-slate-300">
+                      {formatCurrency(totalCost)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-slate-400 text-sm">
+                    <span>{activeStrings.delivery_fee_confirmed}</span>
+                    <span className="font-mono text-slate-300">
+                      {formatCurrency(orderResult.delivery_fee ?? localDeliveryFee)}
+                    </span>
+                  </div>
                   <div className="flex justify-between font-bold text-white text-sm border-t border-white/10 pt-1.5">
                     <span>{activeStrings.final_total}</span>
                     <span className="font-mono text-kapruka-red">
-                      {formatCurrency(orderResult.total)}
+                      {formatCurrency(orderResult.confirmed_total ?? orderResult.total)}
                     </span>
                   </div>
                 </div>

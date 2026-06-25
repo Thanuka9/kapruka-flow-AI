@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { KapriAvatar } from "./AgentPersona";
 import Icon3D from "./Icon3D";
+import ProductCard from "./ProductCard";
 import { getSeason, buildPickedForYou, getDynamicSuggestions } from "../utils/personalize";
 import { getBookmarks } from "../utils/bookmarks";
 import { getMcpStatusPresentation } from "./localization";
@@ -64,6 +65,10 @@ export default function IntentCanvas({
   onDemoStart,
   savedCartCount = 0,
   onContinueCart,
+  trendingProducts = [],
+  trendingLoading = false,
+  isBuilding = false,
+  onTrendingAdd,
 }) {
   const season = getSeason(new Date(), language);
   const bookmarks = typeof window !== "undefined" ? getBookmarks() : [];
@@ -72,6 +77,8 @@ export default function IntentCanvas({
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
   const [isVoiceSupported, setIsVoiceSupported] = useState(false);
+  const [selectedSuggIdx, setSelectedSuggIdx] = useState(null);
+  const suggTimerRef = useRef(null);
   const recogRef = useRef(null);
   const inputRef = useRef(null);
   const initialTextRef = useRef("");
@@ -108,14 +115,24 @@ export default function IntentCanvas({
 
   function handleSubmit(e) {
     if (e) e.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() || isBuilding) return;
     onStartBuild(text, language);
   }
 
-  function handleSuggClick(suggText) {
+  function handleSuggClick(suggText, idx) {
+    if (isBuilding) return;
+    setSelectedSuggIdx(idx);
     setText(suggText);
-    setTimeout(() => inputRef.current?.focus(), 60);
+    if (suggTimerRef.current) clearTimeout(suggTimerRef.current);
+    suggTimerRef.current = setTimeout(() => {
+      onStartBuild(suggText, language);
+      setSelectedSuggIdx(null);
+    }, 550);
   }
+
+  useEffect(() => () => {
+    if (suggTimerRef.current) clearTimeout(suggTimerRef.current);
+  }, []);
 
   function startVoice() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -206,10 +223,18 @@ export default function IntentCanvas({
 
         {/* Hero headline */}
         <div className="text-center mb-8">
-          <h1 className="font-black tracking-tight hero-title" style={{ fontSize: "clamp(2rem, 5vw, 3.25rem)", lineHeight: 1.1 }}>
-            <span className="block">{s.what_do_you_want || "Tell me what you need."}</span>
+          <h1
+            className="font-black tracking-tight hero-title"
+            style={{ fontSize: "clamp(2rem, 5vw, 3.25rem)", lineHeight: 1.1 }}
+            aria-label={s.hero_full || "Tell me what you need. I'll build the perfect cart."}
+          >
+            <span className="sr-only">
+              {s.hero_full || "Tell me what you need. I'll build the perfect cart."}
+            </span>
+            <span className="block" aria-hidden="true">{s.what_do_you_want || "Tell me what you need."}</span>
             <span
               className="block mt-1"
+              aria-hidden="true"
               style={{
                 fontSize: "0.88em",
                 backgroundImage: "linear-gradient(135deg, #f6c343 0%, #ff8c00 50%, #f6c343 100%)",
@@ -282,6 +307,7 @@ export default function IntentCanvas({
               className="flow-input w-full pr-12 text-sm min-h-[52px] px-4 rounded-xl"
               style={{ fontSize: "0.9375rem" }}
               autoFocus
+              disabled={isBuilding}
             />
             {isVoiceSupported && (
               <button
@@ -317,9 +343,17 @@ export default function IntentCanvas({
           <div className="flex gap-2 items-stretch">
             <button
               type="submit"
-              className="btn-primary flex-1 min-h-[48px] text-sm font-bold rounded-xl"
+              disabled={isBuilding || !text.trim()}
+              className="btn-primary flex-1 min-h-[48px] text-sm font-bold rounded-xl disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {s.build_my_cart || "Build My Cart"} →
+              {isBuilding ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden />
+                  {s.ruka_searching || "Ruka is searching Kapruka…"}
+                </>
+              ) : (
+                <>{s.build_my_cart || "Build My Cart"} →</>
+              )}
             </button>
             <button
               type="button"
@@ -343,15 +377,48 @@ export default function IntentCanvas({
               <button
                 key={i}
                 type="button"
-                className="sugg-card"
-                onClick={() => handleSuggClick(card.text)}
+                className={`sugg-card ${selectedSuggIdx === i ? "sugg-card-selected" : ""}`}
+                onClick={() => handleSuggClick(card.text, i)}
+                disabled={isBuilding}
               >
                 <span className="sugg-card-icon">{card.icon}</span>
-                <span className="sugg-card-title">{card.title}</span>
+                <span className="sugg-card-title">
+                  {selectedSuggIdx === i ? (s.selected_suggestion || "Selected ✓") : card.title}
+                </span>
                 <span className="sugg-card-subtitle">{card.subtitle}</span>
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Trending products on landing */}
+        <div className="mt-6 mb-2">
+          <p className="text-xs text-slate-500 text-center uppercase tracking-widest mb-3 font-semibold">
+            {s.trending_on_kapruka || "Trending on Kapruka"}
+          </p>
+          {trendingLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <div key={n} className="flow-card p-4 h-48 animate-pulse bg-white/5 rounded-xl" />
+              ))}
+            </div>
+          ) : trendingProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {trendingProducts.slice(0, 6).map((product, idx) => (
+                <ProductCard
+                  key={product.id || idx}
+                  product={product}
+                  isInCart={false}
+                  onAdd={() => onTrendingAdd?.(product)}
+                  strings={s}
+                  compact
+                  cardIndex={idx}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-sm text-slate-500">{s.loading || "Loading…"}</p>
+          )}
         </div>
 
         {/* Personalised picks (if any orders) */}
@@ -365,7 +432,7 @@ export default function IntentCanvas({
                 <button
                   key={`pfy-${idx}`}
                   type="button"
-                  onClick={() => handleSuggClick(chip.text)}
+                  onClick={() => handleSuggClick(chip.text, `pfy-${idx}`)}
                   className="flow-chip flow-chip-gold text-xs py-2 px-3"
                 >
                   {chip.label}

@@ -854,6 +854,34 @@ def _product_category(p: Dict) -> str:
     return (p.get("category") or "").lower()
 
 
+AGE_RESTRICTED_TERMS = {
+    "liquor",
+    "wine",
+    "whisky",
+    "whiskey",
+    "spirits",
+    "tobacco",
+    "sexual_wellness",
+    "cigarette",
+    "beer",
+    "champagne",
+    "vodka",
+}
+
+
+def _is_age_restricted(product: Dict) -> bool:
+    cat = _product_category(product)
+    name = (product.get("name") or "").lower()
+    return any(t in cat or t in name for t in AGE_RESTRICTED_TERMS)
+
+
+def _user_explicitly_wants_age_restricted(intent: Dict) -> bool:
+    keywords = [k.lower() for k in (intent.get("keywords") or [])]
+    matched = [m.lower() for m in (intent.get("matched_categories") or [])]
+    blob = " ".join(keywords + matched)
+    return any(t in blob for t in AGE_RESTRICTED_TERMS)
+
+
 def relevance_score(product: Dict, intent: Dict) -> float:
     """Score how well a product matches what the user actually asked for.
 
@@ -983,6 +1011,13 @@ def relevance_score(product: Dict, intent: Dict) -> float:
     # 6) Mild prior so an empty-keyword query still ranks sensibly.
     if score == 0.0 and product.get("in_stock", True):
         score = 0.2
+
+    # 7) Age-restricted items — avoid auto-recommend unless user asked.
+    if _is_age_restricted(product) and not _user_explicitly_wants_age_restricted(
+        intent
+    ):
+        score -= 10.0
+
     return round(score, 3)
 
 

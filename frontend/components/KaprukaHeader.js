@@ -216,11 +216,12 @@ export default function KaprukaHeader({
               </button>
             )}
 
-            <div className="hidden md:flex items-center bg-white/5 border border-white/8 rounded-full p-1 h-11">
+            <div className="hidden md:flex items-center bg-white/5 border border-white/8 rounded-full p-1 h-11 gap-0.5" role="group" aria-label={s.lang_switch_label || "Language"}>
+              <span className="pl-2 pr-1 text-sm" aria-hidden>🌐</span>
               {[
-                { code: "en-US", label: "EN" },
-                { code: "si-LK", label: "සිං" },
-                { code: "en-LK", label: "Tang" }
+                { code: "en-US", label: s.lang_english || "English" },
+                { code: "si-LK", label: s.lang_sinhala || "සිංහල" },
+                { code: "en-LK", label: s.lang_tanglish || "Tanglish" },
               ].map((lang) => {
                 const isActive = currentLanguage === lang.code;
                 return (
@@ -228,12 +229,15 @@ export default function KaprukaHeader({
                     key={lang.code}
                     type="button"
                     onClick={() => onLanguageChange(lang.code)}
-                    className={`h-8 px-4 text-xs font-bold rounded-full transition-all duration-300 flex items-center justify-center ${
+                    aria-label={`${lang.label}${isActive ? " (selected)" : ""}`}
+                    aria-pressed={isActive}
+                    className={`h-8 min-w-[70px] px-3 text-xs font-bold rounded-full transition-all duration-300 flex items-center justify-center gap-1 ${
                       isActive
-                        ? "bg-[#D80000] text-white shadow-[0_2px_8px_rgba(216,0,0,0.4)]"
+                        ? "bg-[#D80000] text-white shadow-[0_2px_8px_rgba(216,0,0,0.4)] underline decoration-white/40 underline-offset-4"
                         : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
                     }`}
                   >
+                    {isActive && <span aria-hidden>✓</span>}
                     {lang.label}
                   </button>
                 );
@@ -277,10 +281,10 @@ export default function KaprukaHeader({
                 <button
                   type="button"
                   onClick={onLoginClick}
-                  className="hidden sm:flex flex-col items-start px-4 py-1.5 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
+                  className="hidden sm:flex items-center px-4 py-2 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all text-xs font-bold text-slate-200"
+                  aria-label={s.sign_in || s.login || "Sign In"}
                 >
-                  <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.hello_label || "Hello"}</span>
-                  <span className="text-xs font-bold text-slate-200 leading-tight mt-0.5">{s.login}</span>
+                  {s.sign_in || s.login || "Sign In"}
                 </button>
               </>
             )}
@@ -290,6 +294,7 @@ export default function KaprukaHeader({
               onClick={onCartClick}
               className="relative flex items-center gap-3 pl-3 pr-4 h-11 rounded-full bg-white/5 border border-white/8 hover:bg-white/10 hover:border-white/15 hover:shadow-[0_0_15px_rgba(216,0,0,0.2)] transition-all group"
               title={s.active_crate}
+              aria-label={`${s.active_crate} — ${cartCount} ${cartCount === 1 ? (s.cart_item_singular || "item") : (s.cart_item_plural || "items")}`}
             >
               <div className="relative text-red-500 transition-transform group-hover:scale-105">
                 <CartIcon className="w-5 h-5 text-red-500" />

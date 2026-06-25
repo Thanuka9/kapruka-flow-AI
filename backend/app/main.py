@@ -324,7 +324,17 @@ def _get_price_from_raw(data: Dict[str, Any]) -> float:
 
 @app.post("/api/checkout")
 async def handle_checkout(req: CheckoutRequest):
-    delivery_fee = 300.0
+    # Determine delivery fee early for consistency
+    DELIVERY_FEES = {
+        "same-day": 600.0,
+        "same_day": 600.0,
+        "next-day": 400.0,
+        "next_day": 400.0,
+        "scheduled": 300.0,
+    }
+    opt = (req.delivery_option or "scheduled").lower().strip()
+    delivery_fee = DELIVERY_FEES.get(opt, 300.0)
+
     # 1. Idempotency Check
     existing_order = get_session_order(req.session_id, req.cart_version)
     if existing_order:
@@ -338,6 +348,10 @@ async def handle_checkout(req: CheckoutRequest):
             "order_number": existing_order["order_id"],
             "payment_url": f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={existing_order['order_id']}",
             "total": existing_order["total_price"],
+            "confirmed_total": existing_order["total_price"],
+            "delivery_fee": delivery_fee,
+            "delivery_option": req.delivery_option,
+            "delivery_date": req.delivery_date,
             "currency": "LKR",
             "formatted_message": "Order retrieved successfully (idempotent result).",
             "duplicate": True,
@@ -596,7 +610,7 @@ async def handle_checkout(req: CheckoutRequest):
                 if pay_link_match:
                     url = pay_link_match.group(1) or pay_link_match.group(2)
                     sim_order_id = "TEMP-" + str(uuid.uuid4())[:8]
-                    final_total = safe_price_sum(products) + 300
+                    final_total = safe_price_sum(products) + delivery_fee
                     save_order(
                         order_id=sim_order_id,
                         email=req.email,
@@ -612,6 +626,10 @@ async def handle_checkout(req: CheckoutRequest):
                         "order_number": sim_order_id,
                         "payment_url": url,
                         "total": final_total,
+                        "confirmed_total": final_total,
+                        "delivery_fee": delivery_fee,
+                        "delivery_option": req.delivery_option,
+                        "delivery_date": req.delivery_date,
                         "currency": req.currency or "LKR",
                         "formatted_message": mcp_res,
                     }
@@ -630,7 +648,7 @@ async def handle_checkout(req: CheckoutRequest):
         sim_order_id = "FLOW-SIM-" + str(uuid.uuid4())[:8]
         sim_url = f"https://www.kapruka.com/shop/paymentGatewayCheck.jsp?orderId={sim_order_id}"
         log_analytics(req.session_id, "checkout_fallback", {"order_id": sim_order_id})
-        final_total = safe_price_sum(products) + 300
+        final_total = safe_price_sum(products) + delivery_fee
         save_order(
             order_id=sim_order_id,
             email=req.email,
@@ -646,6 +664,10 @@ async def handle_checkout(req: CheckoutRequest):
             "order_number": sim_order_id,
             "payment_url": sim_url,
             "total": final_total,
+            "confirmed_total": final_total,
+            "delivery_fee": delivery_fee,
+            "delivery_option": req.delivery_option,
+            "delivery_date": req.delivery_date,
             "currency": req.currency or "LKR",
             "formatted_message": "Simulated checkout — enable ALLOW_SIMULATED_CHECKOUT for development only.",
             "simulated": True,

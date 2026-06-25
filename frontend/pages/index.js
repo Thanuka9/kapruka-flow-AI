@@ -36,6 +36,11 @@ export default function Home() {
   const [apiComplete, setApiComplete] = useState(false);
   const [mcpStatus, setMcpStatus] = useState("ready");
   const [flowError, setFlowError] = useState(null);
+  const [flowErrorType, setFlowErrorType] = useState("generic");
+  const [isBuilding, setIsBuilding] = useState(false);
+  const [trendingProducts, setTrendingProducts] = useState([]);
+  const [trendingLoading, setTrendingLoading] = useState(false);
+  const [giftMessageDraft, setGiftMessageDraft] = useState("");
   const [catalogCache, setCatalogCache] = useState([]);
   const [lastFailedPrompt, setLastFailedPrompt] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -118,7 +123,35 @@ export default function Home() {
       .catch(() => setMcpStatus("unavailable"));
 
     loadCategories();
+    loadTrendingProducts();
   }, []);
+
+  async function loadTrendingProducts() {
+    setTrendingLoading(true);
+    const queries = ["gift hamper", "chocolates", "flowers", "cakes"];
+    try {
+      const results = await Promise.all(
+        queries.map((q) =>
+          fetch(`/api/search?q=${encodeURIComponent(q)}`)
+            .then((r) => (r.ok ? r.json() : { results: [] }))
+            .catch(() => ({ results: [] }))
+        )
+      );
+      const merged = [];
+      const seen = new Set();
+      for (const batch of results) {
+        for (const p of batch.results || []) {
+          if (p?.id && !seen.has(p.id)) {
+            seen.add(p.id);
+            merged.push(p);
+          }
+        }
+      }
+      setTrendingProducts(merged.slice(0, 6));
+    } finally {
+      setTrendingLoading(false);
+    }
+  }
 
   async function loadCategories() {
     setCategoriesLoading(true);
@@ -183,6 +216,9 @@ export default function Home() {
     setCartVersions(data.cart_versions || {});
     setStory(data.story || []);
     setMetadata(data.metadata || {});
+    if (data.metadata?.intent_parsed?.gift_message) {
+      setGiftMessageDraft(data.metadata.intent_parsed.gift_message);
+    }
     if (data.metadata?.catalog_products) {
       setCatalogCache(data.metadata.catalog_products);
     }
@@ -284,6 +320,14 @@ export default function Home() {
         setCartVersions(JSON.parse(cachedCart));
         setStory(cachedStory ? JSON.parse(cachedStory) : ["Restored cart from local workspace cache."]);
         setMetadata(cachedMetadata ? JSON.parse(cachedMetadata) : {});
+        try {
+          const meta = cachedMetadata ? JSON.parse(cachedMetadata) : {};
+          if (meta?.intent_parsed?.gift_message) {
+            setGiftMessageDraft(meta.intent_parsed.gift_message);
+          }
+        } catch {
+          /* ignore */
+        }
         if (goToCart) setPageState("cart");
         if (cachedEvolution) {
           setEvolution(JSON.parse(cachedEvolution));
@@ -304,6 +348,8 @@ export default function Home() {
     setApiComplete(false);
     setPipelineEvents([]);
     setFlowError(null);
+    setFlowErrorType("generic");
+    setIsBuilding(true);
     setLastPrompt(promptText);
     if (isDemoPrompt(promptText)) setDemoRan(true);
     setLastFailedPrompt({ promptText, language, overrideBudget, catHint: catHint ?? categoryHint });
@@ -351,7 +397,8 @@ export default function Home() {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.detail || data.error || "Pipeline failed");
+        const detail = data.detail || data.error || "Pipeline failed";
+        throw new Error(response.status === 429 ? `429: ${detail}` : String(detail));
       }
 
       setPipelineEvents(data.pipeline_events || []);
@@ -363,16 +410,28 @@ export default function Home() {
     } catch (err) {
       console.error(err);
       const errStrings = LOCALIZED_STRINGS[language] || LOCALIZED_STRINGS["en-US"];
-      const msg =
-        err.name === "AbortError"
-          ? errStrings.pipeline_timeout
-          : typeof navigator !== "undefined" && !navigator.onLine
-            ? errStrings.network_fail || errStrings.pipeline_error
-            : err.message || errStrings.pipeline_error;
+      let errorType = "generic";
+      let msg = err.message || errStrings.pipeline_error;
+      if (err.name === "AbortError") {
+        errorType = "mcp";
+        msg = errStrings.pipeline_timeout;
+      } else if (typeof navigator !== "undefined" && !navigator.onLine) {
+        errorType = "network";
+        msg = errStrings.network_fail || errStrings.pipeline_error;
+      } else if (/429|too many requests|rate limit/i.test(String(msg))) {
+        errorType = "rate_limit";
+        msg = errStrings.flow_error_rate_limit || msg;
+      } else if (/503|mcp|catalog|unavailable/i.test(String(msg))) {
+        errorType = "mcp";
+        msg = errStrings.flow_error_mcp || msg;
+      }
+      setFlowErrorType(errorType);
       setFlowError(msg);
       setPageState("input");
       setApiComplete(false);
       setPipelineEvents([]);
+    } finally {
+      setIsBuilding(false);
     }
   }
 
@@ -395,6 +454,7 @@ export default function Home() {
       if (totalItems === 0) {
         const errStrings = LOCALIZED_STRINGS[currentLanguage] || LOCALIZED_STRINGS["en-US"];
         setFlowError(errStrings.no_products || errStrings.pipeline_error);
+        setFlowErrorType("no_products");
         setPageState("input");
         setPendingData(null);
         setAnimationDone(false);
@@ -406,6 +466,9 @@ export default function Home() {
       setStory(pendingData.story);
       setMetadata(pendingData.metadata);
       setCatalogCache(pendingData.metadata?.catalog_products || catalogCache);
+      if (pendingData.metadata?.intent_parsed?.gift_message) {
+        setGiftMessageDraft(pendingData.metadata.intent_parsed.gift_message);
+      }
       setPageState("cart");
       setActiveVersion("initial");
 
@@ -1041,6 +1104,13 @@ export default function Home() {
     }
   }
 
+  function handleTrendingAdd(product) {
+    const name = product?.name || "this item";
+    const price = product?.price?.amount ?? product?.price ?? "";
+    const budgetHint = price ? ` under ${price} LKR` : "";
+    handleStartBuild(`Add ${name} to my cart${budgetHint}`, currentLanguage);
+  }
+
   function handleGoHome() {
     setPageState("input");
   }
@@ -1106,6 +1176,10 @@ export default function Home() {
             onDemoStart={() => setDemoRan(true)}
             savedCartCount={savedCartItemCount}
             onContinueCart={handleCartClick}
+            trendingProducts={trendingProducts}
+            trendingLoading={trendingLoading}
+            isBuilding={isBuilding}
+            onTrendingAdd={handleTrendingAdd}
           />
         )}
         
@@ -1128,6 +1202,9 @@ export default function Home() {
             <div className="space-y-3">
               <h2 className="text-section text-flow-text">{strings.empty_crate}</h2>
               <p className="text-lg text-flow-muted max-w-md mx-auto">{strings.alert_no_crate}</p>
+              <p className="text-sm text-flow-muted max-w-md mx-auto">
+                {strings.empty_cart_checkout_hint || "Build a cart with products, then follow Sender → Delivery → Gift → Pay at checkout."}
+              </p>
             </div>
             <button
               type="button"
@@ -1166,6 +1243,8 @@ export default function Home() {
             clientProfile={buildClientAiProfile(userOrders, getBookmarks())}
             language={currentLanguage}
             onCompareClick={() => setCompareModalOpen(true)}
+            giftMessage={giftMessageDraft}
+            onGiftMessageChange={setGiftMessageDraft}
           />
         )}
       </main>
@@ -1178,7 +1257,7 @@ export default function Home() {
           session_id={sessionId}
           cart_version={activeVersion}
           defaultCity={metadata.delivery_city}
-          defaultGiftMessage={metadata.intent_parsed?.gift_message}
+          defaultGiftMessage={giftMessageDraft || metadata.intent_parsed?.gift_message || ""}
           totalCost={totalCost}
           deliveryFee={metadata.delivery_fee ?? 300}
           products={items}
@@ -1226,8 +1305,12 @@ export default function Home() {
 
       <FlowError
         message={flowError}
+        errorType={flowErrorType}
         onRetry={handleRetryFlow}
-        onDismiss={() => setFlowError(null)}
+        onDismiss={() => {
+          setFlowError(null);
+          setFlowErrorType("generic");
+        }}
         strings={strings}
       />
 
@@ -1238,14 +1321,14 @@ export default function Home() {
             © {new Date().getFullYear()} Kapruka Holdings PLC. Kapruka Agent Challenge 2026.
           </div>
           <div className="flex gap-8 text-flow-secondary font-medium">
-            <a href="https://www.kapruka.com" target="_blank" rel="noopener noreferrer" className="hover:text-kapruka-red transition-colors">
-              Kapruka.com
+            <a href="https://www.kapruka.com" target="_blank" rel="noopener noreferrer" className="hover:text-kapruka-red transition-colors inline-flex items-center gap-1">
+              Kapruka.com <span aria-hidden>↗</span>
             </a>
-            <a href="https://mcp.kapruka.com" target="_blank" rel="noopener noreferrer" className="hover:text-kapruka-red transition-colors">
-              MCP Docs
+            <a href="https://mcp.kapruka.com" target="_blank" rel="noopener noreferrer" className="hover:text-kapruka-red transition-colors inline-flex items-center gap-1">
+              MCP Docs <span aria-hidden>↗</span>
             </a>
-            <a href="https://www.kapruka.com/contactUs/agentChallenge.html" target="_blank" rel="noopener noreferrer" className="hover:text-kapruka-red transition-colors">
-              Agent Challenge
+            <a href="https://www.kapruka.com/contactUs/agentChallenge.html" target="_blank" rel="noopener noreferrer" className="hover:text-kapruka-red transition-colors inline-flex items-center gap-1">
+              Agent Challenge <span aria-hidden>↗</span>
             </a>
           </div>
         </div>

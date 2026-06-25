@@ -17,12 +17,12 @@ test.describe("Kapruka Flow AI Smoke Tests", () => {
     await buildBtn.click();
 
     // Verify it transitions to workspace or cart page state
-    await expect(page.locator("text=Active Crate, text=Curation Crate Story, .flow-card").first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("text=Cart, text=Curation Story, .flow-card").first()).toBeVisible({ timeout: 15000 });
   });
 
   test("2. Logged-in user profile shows correct name/email", async ({ page }) => {
     // Click account login button
-    const loginBtn = page.locator("button:has-text('Login'), button:has-text('Sign in')").first();
+    const loginBtn = page.locator("button:has-text('Sign In'), button:has-text('Login'), button:has-text('Sign in')").first();
     if (await loginBtn.isVisible()) {
       await loginBtn.click();
 
@@ -63,14 +63,14 @@ test.describe("Kapruka Flow AI Smoke Tests", () => {
     await expect(suggestionPill).toBeVisible();
     
     // Store cart count
-    const cartCountBefore = await page.locator("button[title='Active Crate']").innerText();
+    const cartCountBefore = await page.locator("button[aria-label*='Cart'], button[title='Cart']").first().innerText();
     
     // Click a suggestion
     await suggestionPill.click();
     
     // Verify it updates or sends request
     await page.waitForTimeout(2000);
-    const cartCountAfter = await page.locator("button[title='Active Crate']").innerText();
+    const cartCountAfter = await page.locator("button[aria-label*='Cart'], button[title='Cart']").first().innerText();
     expect(cartCountAfter).not.toEqual(cartCountBefore);
   });
 
