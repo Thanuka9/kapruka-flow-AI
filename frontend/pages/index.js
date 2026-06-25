@@ -1317,7 +1317,7 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
 
 export async function getServerSideProps({ res }) {
   if (res) {
-    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("X-Kapruka-Build", process.env.VERCEL_GIT_COMMIT_SHA || "local");
   }
 
