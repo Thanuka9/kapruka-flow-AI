@@ -190,7 +190,7 @@ export default function AIWorkspace({
               key={step.key}
               className={`pipeline-step-enter flex items-center gap-3 p-2.5 rounded-xl transition-all duration-150 ${
                 done
-                  ? "bg-green-50 border border-green-100"
+                  ? "bg-emerald-950/20 border border-emerald-500/20"
                   : activeStep
                     ? "bg-flow-bg-secondary border border-flow-border"
                     : "opacity-45"
@@ -208,7 +208,15 @@ export default function AIWorkspace({
               >
                 {done ? "✓" : step.icon}
               </div>
-              <span className={`text-sm font-semibold ${activeStep ? "text-flow-text" : "text-flow-secondary"}`}>
+              <span
+                className={`text-sm font-semibold ${
+                  activeStep
+                    ? "text-flow-text"
+                    : done
+                      ? "text-emerald-400"
+                      : "text-flow-secondary"
+                }`}
+              >
                 {step.label}
               </span>
               {activeStep && (

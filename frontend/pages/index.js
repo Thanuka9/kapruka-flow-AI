@@ -1078,10 +1078,7 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
   }
 
   const items = cartVersions[activeVersion] ?? [];
-  const savedCartItemCount = Object.values(cartVersions).reduce(
-    (max, ver) => Math.max(max, Array.isArray(ver) ? ver.length : 0),
-    0
-  );
+  const savedCartItemCount = items.length;
 
   function handleCartClick() {
     if (pageState === "cart") {
