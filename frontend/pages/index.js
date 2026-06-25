@@ -18,10 +18,11 @@ import {
   getSavedProductsPayload,
   buildReorderPrompt,
 } from "../utils/userContext";
+import { SHOWCASE_PRODUCTS, fetchTrendingProductsFromBackend } from "../constants/landingProducts";
 
 const INTENT_TIMEOUT_MS = 120000;
 
-export default function Home() {
+export default function Home({ initialTrendingProducts = [] }) {
   const [pageState, setPageState] = useState("input"); // "input" | "workspace" | "cart"
   const [sessionId, setSessionId] = useState(null);
   const [cartVersions, setCartVersions] = useState({});
@@ -38,7 +39,9 @@ export default function Home() {
   const [flowError, setFlowError] = useState(null);
   const [flowErrorType, setFlowErrorType] = useState("generic");
   const [isBuilding, setIsBuilding] = useState(false);
-  const [trendingProducts, setTrendingProducts] = useState([]);
+  const [trendingProducts, setTrendingProducts] = useState(
+    initialTrendingProducts.length > 0 ? initialTrendingProducts : SHOWCASE_PRODUCTS
+  );
   const [trendingLoading, setTrendingLoading] = useState(false);
   const [giftMessageDraft, setGiftMessageDraft] = useState("");
   const [catalogCache, setCatalogCache] = useState([]);
@@ -147,7 +150,7 @@ export default function Home() {
           }
         }
       }
-      setTrendingProducts(merged.slice(0, 6));
+      setTrendingProducts(merged.length > 0 ? merged.slice(0, 6) : SHOWCASE_PRODUCTS);
     } finally {
       setTrendingLoading(false);
     }
@@ -584,38 +587,7 @@ export default function Home() {
     }
   }
 
-  const FRONTEND_FALLBACK_PRODUCTS = [
-    {
-      id: "FE-FALLBACK-CHOC",
-      name: "Premium Assorted Chocolates Pack",
-      price: { amount: 2850, currency: "LKR" },
-      image_url: "https://www.kapruka.com/images/chocolates/choc_box.jpg",
-      category: "Chocolates",
-      category_emoji: "🍫",
-      in_stock: true,
-      delivery_speed: "Standard"
-    },
-    {
-      id: "FE-FALLBACK-FLOWERS",
-      name: "Fresh Red Roses Elegant Bouquet",
-      price: { amount: 3500, currency: "LKR" },
-      image_url: "https://www.kapruka.com/images/flowers/roses.jpg",
-      category: "Flowers",
-      category_emoji: "🌹",
-      in_stock: true,
-      delivery_speed: "Standard"
-    },
-    {
-      id: "FE-FALLBACK-CAKE",
-      name: "Classic Ribbon Celebration Cake (1kg)",
-      price: { amount: 4200, currency: "LKR" },
-      image_url: "https://www.kapruka.com/images/cakes/ribbon_cake.jpg",
-      category: "Cakes",
-      category_emoji: "🎂",
-      in_stock: true,
-      delivery_speed: "Standard"
-    }
-  ];
+  const FRONTEND_FALLBACK_PRODUCTS = SHOWCASE_PRODUCTS;
 
   // Conversational refine: interpret a free-text follow-up and dispatch it
   // against existing handlers / MCP endpoints, then have Ruka reply.
@@ -1335,4 +1307,22 @@ export default function Home() {
       </footer>
     </div>
   );
+}
+
+export async function getServerSideProps() {
+  const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
+  let initialTrendingProducts = [];
+  try {
+    initialTrendingProducts = await fetchTrendingProductsFromBackend(backendUrl);
+  } catch {
+    initialTrendingProducts = [];
+  }
+  if (!initialTrendingProducts.length) {
+    initialTrendingProducts = SHOWCASE_PRODUCTS;
+  }
+  return {
+    props: {
+      initialTrendingProducts,
+    },
+  };
 }

@@ -216,30 +216,31 @@ export default function KaprukaHeader({
               </button>
             )}
 
-            <div className="hidden md:flex items-center bg-white/5 border border-white/8 rounded-full p-1 h-11 gap-0.5" role="group" aria-label={s.lang_switch_label || "Language"}>
-              <span className="pl-2 pr-1 text-sm" aria-hidden>🌐</span>
+            <div className="flex items-center bg-white/5 border border-white/8 rounded-full p-1 min-h-[36px] sm:min-h-[40px] gap-0.5 max-w-[min(100%,280px)] sm:max-w-none overflow-x-auto" role="group" aria-label={s.lang_switch_label || "Language"}>
+              <span className="pl-2 pr-0.5 text-sm shrink-0" aria-hidden>🌐</span>
               {[
                 { code: "en-US", label: s.lang_english || "English" },
                 { code: "si-LK", label: s.lang_sinhala || "සිංහල" },
                 { code: "en-LK", label: s.lang_tanglish || "Tanglish" },
-              ].map((lang) => {
+              ].map((lang, idx) => {
                 const isActive = currentLanguage === lang.code;
                 return (
-                  <button
-                    key={lang.code}
-                    type="button"
-                    onClick={() => onLanguageChange(lang.code)}
-                    aria-label={`${lang.label}${isActive ? " (selected)" : ""}`}
-                    aria-pressed={isActive}
-                    className={`h-8 min-w-[70px] px-3 text-xs font-bold rounded-full transition-all duration-300 flex items-center justify-center gap-1 ${
-                      isActive
-                        ? "bg-[#D80000] text-white shadow-[0_2px_8px_rgba(216,0,0,0.4)] underline decoration-white/40 underline-offset-4"
-                        : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                    }`}
-                  >
-                    {isActive && <span aria-hidden>✓</span>}
-                    {lang.label}
-                  </button>
+                  <span key={lang.code} className="flex items-center shrink-0">
+                    {idx > 0 && <span className="text-slate-600 px-0.5 text-[10px] select-none" aria-hidden>|</span>}
+                    <button
+                      type="button"
+                      onClick={() => onLanguageChange(lang.code)}
+                      aria-label={`${lang.label}${isActive ? " (selected)" : ""}`}
+                      aria-pressed={isActive}
+                      className={`h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs font-bold rounded-full transition-all duration-300 whitespace-nowrap ${
+                        isActive
+                          ? "bg-[#D80000] text-white shadow-[0_2px_8px_rgba(216,0,0,0.4)] ring-1 ring-white/20"
+                          : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                      }`}
+                    >
+                      {lang.label}
+                    </button>
+                  </span>
                 );
               })}
             </div>
@@ -281,10 +282,19 @@ export default function KaprukaHeader({
                 <button
                   type="button"
                   onClick={onLoginClick}
-                  className="hidden sm:flex items-center px-4 py-2 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all text-xs font-bold text-slate-200"
-                  aria-label={s.sign_in || s.login || "Sign In"}
+                  className="hidden sm:flex items-center gap-3 px-1 py-1 rounded-full bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
                 >
-                  {s.sign_in || s.login || "Sign In"}
+                  <span className="flex flex-col items-end leading-tight">
+                    <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">
+                      {s.hello_guest || "Hello, Guest"}
+                    </span>
+                  </span>
+                  <span
+                    className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-slate-100 hover:bg-[#D80000] hover:border-[#D80000] transition-colors"
+                    aria-label={s.sign_in || s.login || "Sign In"}
+                  >
+                    {s.sign_in || s.login || "Sign In"}
+                  </span>
                 </button>
               </>
             )}
@@ -292,9 +302,11 @@ export default function KaprukaHeader({
             <button
               type="button"
               onClick={onCartClick}
-              className="relative flex items-center gap-3 pl-3 pr-4 h-11 rounded-full bg-white/5 border border-white/8 hover:bg-white/10 hover:border-white/15 hover:shadow-[0_0_15px_rgba(216,0,0,0.2)] transition-all group"
-              title={s.active_crate}
-              aria-label={`${s.active_crate} — ${cartCount} ${cartCount === 1 ? (s.cart_item_singular || "item") : (s.cart_item_plural || "items")}`}
+              className="relative flex items-center gap-2 sm:gap-3 pl-3 pr-3 sm:pr-4 h-11 rounded-full bg-white/5 border border-white/8 hover:bg-white/10 hover:border-white/15 hover:shadow-[0_0_15px_rgba(216,0,0,0.2)] transition-all group"
+              title={cartCount > 0 ? (s.cart_count_label || "Cart").replace("{count}", String(cartCount)) : (s.cart_empty_label || "Your cart is empty")}
+              aria-label={cartCount > 0
+                ? (s.cart_count_label || `Cart · ${cartCount} items`).replace("{count}", String(cartCount))
+                : (s.cart_empty_label || "Your cart is empty")}
             >
               <div className="relative text-red-500 transition-transform group-hover:scale-105">
                 <CartIcon className="w-5 h-5 text-red-500" />
@@ -304,10 +316,11 @@ export default function KaprukaHeader({
                   </span>
                 )}
               </div>
-              <div className="hidden md:flex flex-col items-start text-left">
-                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold leading-none">{s.active_crate}</span>
-                <span className="text-xs font-bold text-slate-200 leading-none mt-0.5">
-                  {cartCount} {cartCount === 1 ? (s.cart_item_singular || "item") : (s.cart_item_plural || "items")}
+              <div className="hidden sm:flex flex-col items-start text-left min-w-0">
+                <span className="text-xs font-bold text-slate-200 leading-tight truncate max-w-[140px]">
+                  {cartCount > 0
+                    ? (s.cart_count_label || `Cart · ${cartCount} items`).replace("{count}", String(cartCount))
+                    : (s.cart_empty_label || "Your cart is empty")}
                 </span>
               </div>
             </button>

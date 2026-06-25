@@ -678,11 +678,11 @@ export default function CartPanel({
                   return sum + (amt * (item.quantity || 1));
                 }, 0);
                 
-                const stepLang = step && step.current_language === "si-LK" 
-                  ? "සිං" 
-                  : step && step.current_language === "en-LK" 
-                    ? "Tang" 
-                    : "EN";
+                const stepLang = step && step.current_language === "si-LK"
+                  ? (activeStrings.lang_sinhala || "සිංහල")
+                  : step && step.current_language === "en-LK"
+                    ? (activeStrings.lang_tanglish || "Tanglish")
+                    : (activeStrings.lang_english || "English");
 
                 const stepPlanLabel = stepActive === "initial" 
                   ? activeStrings.ideal_plan || "Ideal"
