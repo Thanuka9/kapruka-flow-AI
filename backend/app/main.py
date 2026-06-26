@@ -544,6 +544,39 @@ async def handle_checkout(req: CheckoutRequest):
         )
 
         if mcp_res:
+            mcp_res_str = mcp_res.strip()
+            if mcp_res_str.startswith("Error"):
+                if (
+                    "city_not_deliverable" in mcp_res_str
+                    or "delivery network" in mcp_res_str.lower()
+                ):
+                    raise HTTPException(
+                        status_code=400, detail="checkout_city_not_deliverable"
+                    )
+                if "phone" in mcp_res_str.lower() and (
+                    "validation error" in mcp_res_str.lower()
+                    or "value error" in mcp_res_str.lower()
+                    or "too short" in mcp_res_str.lower()
+                    or "least" in mcp_res_str.lower()
+                ):
+                    raise HTTPException(
+                        status_code=400, detail="checkout_phone_invalid"
+                    )
+                if (
+                    "product_not_found" in mcp_res_str
+                    or "product not found" in mcp_res_str.lower()
+                ):
+                    raise HTTPException(
+                        status_code=400, detail="checkout_item_unavailable"
+                    )
+                # Fallback to general HTTP 400 with the clean message
+                clean_err = (
+                    mcp_res_str.replace("ErrorExecutingTool", "Error")
+                    .replace("Error executing tool kapruka_create_order:", "")
+                    .strip()
+                )
+                raise HTTPException(status_code=400, detail=clean_err)
+
             try:
                 order_data = json.loads(mcp_res)
                 order_num = (
