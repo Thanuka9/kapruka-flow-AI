@@ -505,6 +505,7 @@ Both services must be running for the full experience.
 |------|----------|
 | [`backend/README.md`](backend/README.md) | Backend quick reference |
 | [`projectplan.md`](projectplan.md) | Full product vision and spec |
+| [`JUDGE_BRIEF.md`](JUDGE_BRIEF.md) | Concise overview for challenge judges |
 | [`test.md`](test.md) | Manual judge test matrix |
 | [`.env.example`](.env.example) | All environment variables |
 

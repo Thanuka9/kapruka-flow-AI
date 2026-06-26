@@ -30,6 +30,7 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
   const [sessionId, setSessionId] = useState(null);
   const [cartVersions, setCartVersions] = useState({});
   const [activeVersion, setActiveVersion] = useState("initial");
+  const [localStorageCartCount, setLocalStorageCartCount] = useState(0);
   const [story, setStory] = useState([]);
   const [metadata, setMetadata] = useState({});
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -113,9 +114,15 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
     if (urlSession) {
       restoreSession(urlSession, { goToCart: true });
     } else {
-      const savedSession = localStorage.getItem("kapruka_flow_session_id");
-      if (savedSession) {
-        restoreSession(savedSession, { goToCart: false });
+      const cachedCartStr = localStorage.getItem("kapruka_flow_cart_versions");
+      if (cachedCartStr) {
+        try {
+          const cachedCart = JSON.parse(cachedCartStr);
+          const initialItems = cachedCart["initial"] || [];
+          setLocalStorageCartCount(initialItems.length);
+        } catch (e) {
+          console.error("Failed to parse cached cart count", e);
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -223,6 +230,7 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
   }
 
   function applySessionPayload(data, { goToCart = false } = {}) {
+    setLocalStorageCartCount(0);
     setSessionId(data.session_id);
     setCartVersions(data.cart_versions || {});
     setStory(data.story || []);
@@ -1010,6 +1018,7 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
     localStorage.removeItem("kapruka_flow_story");
     localStorage.removeItem("kapruka_flow_metadata");
     localStorage.removeItem("kapruka_flow_evolution");
+    setLocalStorageCartCount(0);
     setSessionId(null);
     setCartVersions({});
     setStory([]);
@@ -1078,7 +1087,7 @@ export default function Home({ initialTrendingProducts = [], buildSha = "dev" })
   }
 
   const items = cartVersions[activeVersion] ?? [];
-  const savedCartItemCount = items.length;
+  const savedCartItemCount = items.length > 0 ? items.length : localStorageCartCount;
 
   function handleCartClick() {
     if (pageState === "cart") {
