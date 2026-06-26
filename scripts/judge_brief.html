@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Kapruka Flow AI — Judge Brief</title>
+  <style>
+    @page { margin: 18mm 16mm; size: A4; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Inter, system-ui, sans-serif;
+      color: #1a1a2e;
+      line-height: 1.55;
+      font-size: 10.5pt;
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    .cover {
+      border-left: 5px solid #D80000;
+      padding: 0 0 0 16px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 22pt;
+      color: #D80000;
+      margin: 0 0 6px;
+      line-height: 1.2;
+    }
+    .meta { color: #555; font-size: 9.5pt; margin: 4px 0; }
+    .meta a { color: #D80000; text-decoration: none; }
+    .tagline { font-style: italic; color: #444; margin-top: 10px; }
+    h2 {
+      font-size: 13pt;
+      color: #D80000;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 4px;
+      margin: 22px 0 10px;
+      page-break-after: avoid;
+    }
+    h3 { font-size: 11pt; margin: 14px 0 6px; page-break-after: avoid; }
+    p { margin: 6px 0; }
+    ul { margin: 6px 0 10px 18px; padding: 0; }
+    li { margin: 3px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 14px;
+      font-size: 9.5pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #fafafa; font-weight: 600; }
+    pre {
+      background: #f6f6f8;
+      border: 1px solid #e8e8ec;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 9pt;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      page-break-inside: avoid;
+    }
+    .flow-num { font-weight: 700; color: #D80000; }
+    hr { border: none; border-top: 1px solid #eee; margin: 18px 0; }
+    .footer {
+      margin-top: 20px;
+      font-size: 9pt;
+      color: #666;
+      font-style: italic;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+    strong { color: #111; }
+  </style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>Kapruka Flow AI</h1>
+  <p class="meta"><strong>Kapruka Agent Challenge 2026</strong></p>
+  <p class="meta"><strong>Author:</strong> Thanuka Ellepola</p>
+  <p class="meta"><strong>Live demo:</strong> <a href="https://kapruka-flow-ai.vercel.app">kapruka-flow-ai.vercel.app</a></p>
+  <p class="meta"><strong>Source:</strong> <a href="https://github.com/Thanuka9/kapruka-flow-AI">github.com/Thanuka9/kapruka-flow-AI</a></p>
+  <p class="tagline">Tell me what you need. I'll build the cart.</p>
+</div>
+
+<h2>What this is</h2>
+<p><strong>Kapruka Flow</strong> is an AI-first shopping experience built on the public <a href="https://mcp.kapruka.com/">Kapruka MCP</a>. Instead of browsing category by category, a customer describes what they want in natural language. The system turns that intent into <strong>four budget-aware cart plans</strong>, lets them compare and refine, then completes a <strong>real guest checkout</strong> on Kapruka.</p>
+
+<h2>Problem it solves</h2>
+<table>
+  <tr><th>Typical e-commerce</th><th>Kapruka Flow</th></tr>
+  <tr><td>Search keywords, open many product pages</td><td>One sentence of intent</td></tr>
+  <tr><td>One cart, manual tweaks</td><td>Four optimized plans (Ideal, Cheaper, Premium, Fast)</td></tr>
+  <tr><td>Opaque recommendations</td><td>Visible MCP tool activity and curation story</td></tr>
+  <tr><td>English-only UX friction</td><td>English, Sinhala, and Tanglish (UI + prompts)</td></tr>
+</table>
+
+<h2>How it works (60-second overview)</h2>
+<pre>Customer intent  →  4-agent pipeline  →  4 cart plans  →  refine / compare  →  Kapruka checkout
+                         ↓
+                  Kapruka MCP (live catalog)</pre>
+<ol>
+  <li><strong>Customer</strong> types or speaks a goal (e.g. <em>"Amma birthday gift under 10000, deliver to Kandy tomorrow"</em>).</li>
+  <li><strong>Backend</strong> runs a four-step agent pipeline against live MCP data.</li>
+  <li><strong>Frontend</strong> shows the workspace animation, MCP activity feed, and four cart tabs.</li>
+  <li><strong>Customer</strong> adjusts budget, chats with <strong>Ruka</strong> to refine, or compares versions.</li>
+  <li><strong>Checkout</strong> validates stock and price via MCP, then returns a <strong>Kapruka payment URL</strong>.</li>
+</ol>
+<p>No external LLM API key is required. Planning uses a <strong>deterministic MCP-native engine</strong> (intent parsing, relevance scoring, budget filling) so behavior is predictable and demo-safe.</p>
+
+<h2>The four-agent pipeline</h2>
+<table>
+  <tr><th>Step</th><th>Agent</th><th>Role</th></tr>
+  <tr><td>1</td><td><strong>Intent</strong></td><td>Parse language, budget, city, date, occasion, recipient from the prompt</td></tr>
+  <tr><td>2</td><td><strong>Catalog</strong></td><td>Search and enrich products from Kapruka MCP</td></tr>
+  <tr><td>3</td><td><strong>Delivery</strong></td><td>Validate city and resolve delivery fee via MCP</td></tr>
+  <tr><td>4</td><td><strong>Cart</strong></td><td>Build four plan variants within budget using relevance scoring</td></tr>
+</table>
+<p>Every MCP call is surfaced in the UI activity ticker so judges can see <em>what</em> the system did, not just the final cart.</p>
+
+<h2>What it can do</h2>
+<h3>Shopping intelligence</h3>
+<ul>
+  <li>Multilingual intent: <strong>English</strong>, <strong>Sinhala</strong>, <strong>Tanglish</strong></li>
+  <li>Four cart strategies: <strong>Ideal</strong>, <strong>Cheaper</strong>, <strong>Premium</strong>, <strong>Fast delivery</strong></li>
+  <li>Instant <strong>budget slider</strong> rebalance (client-side)</li>
+  <li><strong>Conversational refine</strong> with Ruka (add/remove items, change city or budget)</li>
+  <li><strong>Compare Versions</strong> matrix and cart evolution timeline</li>
+  <li><strong>Age-restricted</strong> product deprioritization in ranking</li>
+</ul>
+<h3>Kapruka MCP integration (live)</h3>
+<ul>
+  <li>Product search and enrichment</li>
+  <li>Category navigation (65+ categories)</li>
+  <li>Delivery city validation and fees</li>
+  <li>Stock and price check at checkout</li>
+  <li>Guest order creation with payment link</li>
+</ul>
+<h3>Customer experience</h3>
+<ul>
+  <li>Kapruka-style header (search, categories, cart)</li>
+  <li>Trending product cards on landing with <strong>Add to cart</strong></li>
+  <li>Sign in / register with order history for personalization</li>
+  <li>Saved product bookmarks; shareable session links (<code>?session=...</code>)</li>
+  <li>Localized UI in three languages</li>
+</ul>
+
+<h2>End-to-end flow (what judges should see)</h2>
+<table>
+  <tr><th>#</th><th>Action</th><th>Expected result</th></tr>
+  <tr><td>1</td><td>Open the live demo</td><td>MCP healthy; landing shows search, trending products, commerce steps</td></tr>
+  <tr><td>2</td><td>Build a cart from a prompt</td><td>Workspace shows pipeline; four cart tabs populate</td></tr>
+  <tr><td>3</td><td>Switch plans / compare</td><td>Different items and prices per plan; comparison modal works</td></tr>
+  <tr><td>4</td><td>Refine via chat</td><td>e.g. <em>"add chocolates"</em> updates the active cart</td></tr>
+  <tr><td>5</td><td>Review &amp; Checkout</td><td>Sender → Recipient → Delivery &amp; gift → Review → <strong>Pay</strong></td></tr>
+  <tr><td>6</td><td>Complete payment step</td><td>Kapruka MCP returns order reference and payment URL</td></tr>
+</table>
+<p><strong>Sample prompts:</strong></p>
+<ul>
+  <li><em>Amma birthday gift under 10000 deliver to Kandy tomorrow</em></li>
+  <li><em>Ada Colombo ekata groceries 20000 ta adu</em> (Tanglish)</li>
+  <li><em>අම්මාට උපන්දින තෑග්ගක් කොළඹට</em> (Sinhala)</li>
+</ul>
+
+<h2>Architecture (compact)</h2>
+<table>
+  <tr><th>Layer</th><th>Technology</th><th>Responsibility</th></tr>
+  <tr><td><strong>UI</strong></td><td>Next.js 13, React</td><td>Intent canvas, cart workspace, checkout, localization</td></tr>
+  <tr><td><strong>API proxy</strong></td><td>Next.js /api/*</td><td>Forwards to backend with timeout and client IP</td></tr>
+  <tr><td><strong>Orchestrator</strong></td><td>FastAPI, Python 3.10</td><td>REST API, rate limits, sessions, checkout</td></tr>
+  <tr><td><strong>Intelligence</strong></td><td>mcp_intelligence.py</td><td>Intent parse, relevance score, cart optimization</td></tr>
+  <tr><td><strong>Agents</strong></td><td>agents.py</td><td>Four-step MCP pipeline</td></tr>
+  <tr><td><strong>Data</strong></td><td>SQLite (WAL)</td><td>Users, sessions, carts, orders, analytics</td></tr>
+  <tr><td><strong>Catalog &amp; orders</strong></td><td>Kapruka MCP</td><td>All live product and checkout data</td></tr>
+</table>
+
+<h2>Design principles</h2>
+<ol>
+  <li><strong>MCP-first</strong> - Products and orders come from Kapruka MCP, not a static mock catalog.</li>
+  <li><strong>Transparent AI</strong> - Tool names and pipeline steps are visible to the user.</li>
+  <li><strong>Plans, not a single guess</strong> - Four carts respect different trade-offs (cost, quality, speed).</li>
+  <li><strong>Sri Lanka-ready</strong> - Sinhala/Tanglish prompts and UI; LKR budgets; local delivery cities.</li>
+  <li><strong>Guest checkout</strong> - No Kapruka account required; optional Flow account for history.</li>
+</ol>
+
+<h2>Security and reliability</h2>
+<ul>
+  <li>Passwords: PBKDF2-SHA256 with per-user salt</li>
+  <li>CORS locked to deployed frontend origins</li>
+  <li>Rate limits on intent, checkout, login, and search</li>
+  <li>Checkout re-validates MCP price (±5%) and stock before order</li>
+  <li>MCP calls: bounded timeout, retry with backoff</li>
+  <li>Simulated checkout disabled in production</li>
+</ul>
+
+<h2>Quick links</h2>
+<table>
+  <tr><th>Resource</th><th>URL</th></tr>
+  <tr><td>Live demo</td><td>https://kapruka-flow-ai.vercel.app</td></tr>
+  <tr><td>Repository</td><td>https://github.com/Thanuka9/kapruka-flow-AI</td></tr>
+  <tr><td>Kapruka MCP docs</td><td>https://mcp.kapruka.com/</td></tr>
+  <tr><td>Agent Challenge</td><td>https://www.kapruka.com/contactUs/agentChallenge.html</td></tr>
+</table>
+
+<h2>Suggested 5-minute judge walkthrough</h2>
+<ol>
+  <li><strong>Landing</strong> - Confirm trending products, Add to cart, and the six-step commerce strip.</li>
+  <li><strong>Build</strong> - One multilingual prompt; watch MCP activity.</li>
+  <li><strong>Compare</strong> - Switch Ideal / Cheaper / Premium / Fast; open Compare Versions.</li>
+  <li><strong>Refine</strong> - Ask Ruka to add or remove an item.</li>
+  <li><strong>Checkout</strong> - Fill sender, recipient, delivery city/date, gift message; proceed to Kapruka pay link.</li>
+</ol>
+
+<p class="footer">Built for the Kapruka Agent Challenge 2026 using the public Kapruka MCP - no proprietary API key required.</p>
+
+</body>
+</html>
